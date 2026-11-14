@@ -1,0 +1,2383 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#1d130c" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="BANG!" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" type="image/svg+xml" href="icon.svg" />
+  <link rel="apple-touch-icon" href="icon.svg" />
+  <title>BANG! — Mobilní edice</title>
+  <style>
+:root {
+  --wood-dark: #1d130c;
+  --parchment: #f4e4c1;
+  --ink: #241810;
+  --ink-muted: #5c4433;
+  --brown-card: #8b5a2b;
+  --blue-card: #2b5b84;
+  --gold: #d4a017;
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  font-family: 'Georgia', 'Times New Roman', serif;
+  background: radial-gradient(circle at 50% 30%, #3d2818 0%, #1d130c 75%, #120b07 100%);
+  color: var(--parchment);
+  overscroll-behavior: none;
+  touch-action: manipulation;
+  user-select: none;
+}
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  max-width: 540px;
+  margin: 0 auto;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.mobile-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: rgba(18, 11, 7, 0.94);
+  border-bottom: 2px solid #6b4423;
+  flex-shrink: 0;
+}
+.brand-title {
+  font-size: 20px;
+  font-weight: 900;
+  letter-spacing: 2px;
+  color: var(--gold);
+}
+.top-btns { display: flex; gap: 6px; }
+.btn {
+  background: linear-gradient(180deg, #8b5a2b 0%, #633e1c 100%);
+  color: #fff7e6;
+  border: 1px solid #c28e4e;
+  border-radius: 8px;
+  padding: 7px 11px;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: system-ui, sans-serif;
+  cursor: pointer;
+}
+.btn:active:not(:disabled) { transform: scale(0.96); }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn-primary { background: linear-gradient(180deg, #b91c1c 0%, #7f1d1d 100%); border-color: #ef4444; }
+.btn-gold { background: linear-gradient(180deg, #d4a017 0%, #92670a 100%); border-color: #fde047; color: #1c1208; }
+
+/* Opponents Horizontal Strip */
+.opponents-strip {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 8px 10px;
+  scroll-snap-type: x mandatory;
+  flex-shrink: 0;
+  -webkit-overflow-scrolling: touch;
+}
+.opponents-strip::-webkit-scrollbar { display: none; }
+.player-seat {
+  position: relative;
+  min-width: 152px;
+  max-width: 162px;
+  scroll-snap-align: start;
+  background: linear-gradient(180deg, rgba(58, 37, 22, 0.95) 0%, rgba(34, 21, 13, 0.98) 100%);
+  border: 2px solid #6b4423;
+  border-radius: 10px;
+  padding: 7px 8px;
+  flex-shrink: 0;
+}
+.player-seat.active-turn { border-color: var(--gold); box-shadow: 0 0 12px rgba(212, 160, 23, 0.5); }
+.player-seat.dead { opacity: 0.4; filter: grayscale(0.8); }
+.player-seat.targetable {
+  border-color: #ef4444;
+  box-shadow: 0 0 14px rgba(239, 68, 68, 0.8);
+  animation: pulseTarget 1s infinite;
+}
+@keyframes pulseTarget { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.03); } }
+.seat-header { display: flex; justify-content: space-between; align-items: center; gap: 4px; margin-bottom: 4px; }
+.seat-name { font-weight: 700; font-size: 13px; color: #fef3c7; }
+.role-pill {
+  font-family: system-ui, sans-serif; font-size: 10px; font-weight: 700;
+  padding: 2px 6px; border-radius: 999px; background: #291a10;
+  border: 1px solid #78502b; color: #e5d2b3; white-space: nowrap;
+}
+.role-pill.sheriff { background: #854d0e; border-color: #facc15; color: #fef08a; }
+.role-pill.deputy { background: #1e3a8a; border-color: #60a5fa; color: #dbeafe; }
+.role-pill.outlaw { background: #7f1d1d; border-color: #f87171; color: #fee2e2; }
+.role-pill.renegade { background: #581c87; border-color: #c084fc; color: #f3e8ff; }
+.seat-body { display: flex; gap: 6px; align-items: center; }
+.seat-avatar { width: 42px; height: 36px; border-radius: 5px; overflow: hidden; border: 1px solid #8b5a2b; flex-shrink: 0; }
+.seat-avatar svg { width: 100%; height: 100%; display: block; }
+.seat-stats { flex: 1; min-width: 0; }
+.char-label { font-size: 11px; font-weight: 700; color: #f3d69d; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hp-bullets { display: flex; gap: 2px; margin: 3px 0; flex-wrap: wrap; }
+.bullet {
+  width: 9px; height: 13px; border-radius: 4px 4px 2px 2px;
+  background: linear-gradient(90deg, #b45309 0%, #fbbf24 50%, #92400e 100%);
+  border: 1px solid #451a03;
+}
+.bullet.lost { background: #261910; border-color: #4b3424; opacity: 0.4; }
+.seat-meta { display: flex; gap: 6px; font-size: 10px; font-family: system-ui, sans-serif; color: #d6bfa0; }
+.seat-table-cards { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 4px; }
+.mini-blue-card {
+  font-family: system-ui, sans-serif; font-size: 10px; font-weight: 600;
+  padding: 1px 5px; border-radius: 4px; background: #1e3a5f; border: 1px solid #60a5fa; color: #e0f2fe;
+}
+.mini-blue-card.hazard { background: #5c1919; border-color: #f87171; color: #fee2e2; }
+.toast-bubble {
+  position: absolute; top: -6px; right: 4px; background: #fef3c7; color: #1c1917;
+  font-family: system-ui, sans-serif; font-size: 11px; font-weight: 800;
+  padding: 2px 7px; border-radius: 999px; border: 2px solid #b45309; z-index: 10;
+}
+
+/* Center Compact Table */
+.center-felt {
+  flex: 1;
+  margin: 0 10px;
+  background: radial-gradient(ellipse at center, #2d4c32 0%, #1c3320 100%);
+  border: 3px solid #6b4423;
+  border-radius: 14px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 0;
+  box-shadow: inset 0 0 24px rgba(0,0,0,0.6);
+}
+.piles-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+.pile-box { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.pile-label { font-size: 10px; font-family: system-ui, sans-serif; color: #d1fae5; }
+.card-back {
+  width: 66px; height: 96px; border-radius: 6px;
+  background: linear-gradient(135deg, #7c4d25 0%, #4e2d13 100%);
+  border: 2px solid #d4a017; display: flex; align-items: center; justify-content: center;
+}
+.card-back-logo {
+  font-size: 12px; font-weight: 900; color: #fde68a; transform: rotate(-12deg);
+  border: 1.5px solid #fde68a; padding: 2px 4px; border-radius: 3px;
+}
+.turn-banner {
+  text-align: center;
+  background: rgba(0,0,0,0.35);
+  border-radius: 8px;
+  padding: 6px 10px;
+}
+.turn-banner h3 { margin: 0; font-size: 15px; color: #fef08a; }
+.turn-banner p { margin: 2px 0 0 0; font-size: 12px; font-family: system-ui, sans-serif; color: #e2e8f0; }
+
+/* Bottom Human Dock */
+.human-dock {
+  background: linear-gradient(180deg, rgba(46, 30, 18, 0.98) 0%, rgba(22, 14, 8, 1) 100%);
+  border-top: 2px solid #8b5a2b;
+  padding: 8px 10px 10px 10px;
+  flex-shrink: 0;
+}
+.human-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.human-id { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.human-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.hand-carousel {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 6px 2px 4px 2px;
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+}
+.hand-carousel::-webkit-scrollbar { display: none; }
+
+/* Cards */
+.bang-card {
+  width: 108px; height: 158px; border-radius: 8px; background: var(--parchment);
+  color: var(--ink); display: flex; flex-direction: column; padding: 4px;
+  position: relative; box-shadow: 0 4px 10px rgba(0,0,0,0.55); flex-shrink: 0;
+  scroll-snap-align: start;
+}
+.bang-card.border-brown { border: 3.5px solid var(--brown-card); }
+.bang-card.border-blue { border: 3.5px solid var(--blue-card); }
+.bang-card.border-gold { border: 3.5px solid #b45309; }
+.bang-card.playable { box-shadow: 0 0 0 2px #fde047, 0 4px 12px rgba(250, 204, 21, 0.45); }
+.bang-card.selected-discard { outline: 3px solid #ef4444; transform: translateY(-6px); }
+.bang-card.small { width: 68px; height: 98px; padding: 3px; }
+.bang-card.small .card-title { font-size: 8.5px; }
+.bang-card.small .card-desc { display: none; }
+.bang-card.small .card-symbols { font-size: 7.5px; }
+.card-title {
+  text-align: center; font-size: 10.5px; font-weight: 900; text-transform: uppercase;
+  border-bottom: 1px solid rgba(92, 68, 51, 0.35); padding-bottom: 2px; margin-bottom: 2px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.card-art-wrap { width: 100%; height: 64px; border-radius: 3px; overflow: hidden; border: 1px solid rgba(92, 68, 51, 0.4); }
+.bang-card.small .card-art-wrap { height: 46px; }
+.card-art-svg, .char-art-svg, .role-art-svg { width: 100%; height: 100%; display: block; }
+.card-symbols { font-family: system-ui, sans-serif; font-size: 9px; font-weight: 700; color: #451a03; text-align: center; margin-top: 2px; }
+.card-desc {
+  font-family: system-ui, sans-serif; font-size: 8.2px; line-height: 1.18; color: var(--ink-muted);
+  text-align: center; margin-top: 2px; overflow: hidden; display: -webkit-box;
+  -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+}
+.card-suit-badge {
+  position: absolute; bottom: 2px; left: 4px; font-family: system-ui, sans-serif;
+  font-size: 10px; font-weight: 800; background: rgba(255, 251, 235, 0.9);
+  padding: 0 3px; border-radius: 3px;
+}
+
+/* Modals */
+.modal-backdrop {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.82);
+  display: flex; align-items: center; justify-content: center; z-index: 100; padding: 12px;
+}
+.modal-backdrop.hidden { display: none; }
+.modal-box {
+  background: #2b1d12; border: 2.5px solid var(--gold); border-radius: 14px;
+  width: 100%; max-width: 500px; max-height: 88dvh; overflow-y: auto;
+  padding: 14px; color: var(--parchment);
+}
+.modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid #6b4423; padding-bottom: 6px; }
+.modal-header h2 { margin: 0; font-size: 18px; color: var(--gold); }
+.modal-cards-row, .gallery-grid { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 10px 0; }
+.gallery-tabs { display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; }
+.log-list { display: flex; flex-direction: column; gap: 5px; font-family: system-ui, sans-serif; font-size: 12px; }
+.log-item { padding: 5px 7px; border-radius: 4px; background: rgba(255,255,255,0.04); }
+.log-item.danger { border-left: 3px solid #ef4444; color: #fecaca; }
+.log-item.good { border-left: 3px solid #22c55e; color: #bbf7d0; }
+.log-item.important { border-left: 3px solid #eab308; color: #fef08a; font-weight: 700; }
+.log-item.ability { border-left: 3px solid #38bdf8; color: #bae6fd; }
+.log-item.action { border-left: 3px solid #d97706; color: #fde68a; }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="mobile-topbar">
+      <div class="brand-title">BANG!</div>
+      <div class="top-btns">
+        <button class="btn" id="btn-log">📜</button>
+        <button class="btn" id="btn-gallery">🃏 103</button>
+        <button class="btn" id="btn-rules">❓</button>
+        <button class="btn btn-gold" id="btn-new-game">Nová</button>
+      </div>
+    </header>
+
+    <section class="opponents-strip" id="opponents-grid"></section>
+
+    <section class="center-felt">
+      <div class="piles-row">
+        <div class="pile-box">
+          <div class="card-back"><div class="card-back-logo">BANG!</div></div>
+          <div class="pile-label" id="deck-count">80 karet</div>
+        </div>
+        <div class="pile-box">
+          <div id="discard-top"></div>
+          <div class="pile-label">Odhazovací</div>
+        </div>
+      </div>
+      <div class="turn-banner">
+        <h3 id="turn-title">Vítej v Saloonu!</h3>
+        <p id="turn-subtitle">Nastav hru a začni přestřelku.</p>
+      </div>
+    </section>
+
+    <section class="human-dock">
+      <div class="human-bar">
+        <div class="human-id">
+          <div class="seat-avatar" id="human-avatar"></div>
+          <div style="min-width:0">
+            <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">
+              <strong id="human-char-name" style="color:#fde68a;font-size:13px">—</strong>
+              <span class="role-pill" id="human-role">Role</span>
+            </div>
+            <div class="hp-bullets" id="human-bullets"></div>
+            <div class="seat-table-cards" id="human-table-cards"></div>
+          </div>
+        </div>
+        <div class="human-actions">
+          <button class="btn" id="btn-sid-heal" style="display:none">🩺 +1♥</button>
+          <button class="btn btn-primary" id="btn-cancel-target" style="display:none">Zrušit</button>
+          <button class="btn btn-gold" id="btn-end-turn" disabled>Konec tahu</button>
+        </div>
+      </div>
+      <div class="hand-carousel" id="human-hand"></div>
+    </section>
+  </div>
+
+  <div class="modal-backdrop" id="setup-modal">
+    <div class="modal-box">
+      <div class="modal-header"><h2>🤠 BANG! Mobilní edice</h2></div>
+      <div style="display:flex;flex-direction:column;gap:12px;font-family:system-ui,sans-serif;font-size:14px">
+        <label style="display:flex;flex-direction:column;gap:4px">
+          <strong>Počet hráčů (4–7):</strong>
+          <select id="setup-players" style="padding:10px;border-radius:8px;background:#1d130c;color:#fef3c7;border:1px solid #8b5a2b">
+            <option value="4">4 hráči (Šerif, Odpadlík, 2 Bandité)</option>
+            <option value="5" selected>5 hráčů (Šerif, Odpadlík, 2 Bandité, 1 Pomocník)</option>
+            <option value="6">6 hráčů (Šerif, Odpadlík, 3 Bandité, 1 Pomocník)</option>
+            <option value="7">7 hráčů (Šerif, Odpadlík, 3 Bandité, 2 Pomocníci)</option>
+          </select>
+        </label>
+        <label style="display:flex;flex-direction:column;gap:4px">
+          <strong>Tvá postava:</strong>
+          <select id="setup-character" style="padding:10px;border-radius:8px;background:#1d130c;color:#fef3c7;border:1px solid #8b5a2b"></select>
+        </label>
+        <button class="btn btn-gold" id="btn-start-game" style="padding:12px;font-size:16px">Rozdat karty & Hrát!</button>
+        <div style="font-size:12px;color:#cbb593;text-align:center">
+          Tip: V prohlížeči na mobilu zvol <strong>„Přidat na plochu“</strong> pro instalaci jako nativní aplikaci (funguje i offline).
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop hidden" id="prompt-modal">
+    <div class="modal-box">
+      <div class="modal-header"><h2 id="prompt-title">Výběr</h2></div>
+      <div id="prompt-body"></div>
+    </div>
+  </div>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js').catch(() => {});
+    }
+  </script>
+  <script>
+// Complete official BANG! Base Game Card Definitions (Czech Edition)
+// 7 Roles, 16 Characters, 80 Playing Cards = 103 Cards Total
+
+const SUITS = {
+  S: { symbol: '♠', name: 'Piky', color: '#1a1816' },
+  H: { symbol: '♥', name: 'Srdce', color: '#b91c1c' },
+  D: { symbol: '♦', name: 'Kára', color: '#b91c1c' },
+  C: { symbol: '♣', name: 'Kříže', color: '#1a1816' }
+};
+
+const ROLES = [
+  {
+    id: 'sheriff',
+    name: 'Šerif',
+    count: 1,
+    color: '#d4a017',
+    goal: 'Eliminuj všechny Bandity a Odpadlíka. Hraješ s odkrytou kartou a máš +1 život navíc.',
+    team: 'law'
+  },
+  {
+    id: 'deputy',
+    name: 'Pomocník šerifa',
+    count: 2,
+    color: '#2b5b84',
+    goal: 'Chraň Šerifa za každou cenu! Eliminuj všechny Bandity a Odpadlíka.',
+    team: 'law'
+  },
+  {
+    id: 'outlaw',
+    name: 'Bandita',
+    count: 3,
+    color: '#991b1b',
+    goal: 'Zabij Šerifa! (Za eliminaci Bandity dostane útočník odměnu 3 karty.)',
+    team: 'outlaw'
+  },
+  {
+    id: 'renegade',
+    name: 'Odpadlík',
+    count: 1,
+    color: '#5b3a29',
+    goal: 'Zůstaň poslední naživu! Musíš eliminovat všechny ostatní hráče, Šerifa až jako posledního.',
+    team: 'renegade'
+  }
+];
+
+const CHARACTERS = [
+  {
+    id: 'bart_cassidy',
+    name: 'Bart Cassidy',
+    hp: 4,
+    ability: 'Pokaždé, když je zraněn (ztratí život), lízne si 1 kartu z dobíracího balíčku.',
+    epithet: 'Nezničitelný'
+  },
+  {
+    id: 'black_jack',
+    name: 'Black Jack',
+    hp: 4,
+    ability: 'Ve fázi 1 ukáže druhou líznutou kartu; pokud je ♥ nebo ♦, lízne si ještě 1 kartu navíc.',
+    epithet: 'Karetní hráč'
+  },
+  {
+    id: 'calamity_janet',
+    name: 'Calamity Janet',
+    hp: 4,
+    ability: 'Může hrát kartu BANG! jako Vedle! a kartu Vedle! jako BANG!.',
+    epithet: 'Ostrostřelkyně'
+  },
+  {
+    id: 'el_gringo',
+    name: 'El Gringo',
+    hp: 3,
+    ability: 'Pokaždé, když je zraněn hráčem, vezme si 1 náhodnou kartu z ruky útočníka.',
+    epithet: 'Mstitel'
+  },
+  {
+    id: 'jesse_jones',
+    name: 'Jesse Jones',
+    hp: 4,
+    ability: 'Ve fázi 1 si může první kartu vzít z ruky libovolného hráče místo z balíčku.',
+    epithet: 'Zloděj'
+  },
+  {
+    id: 'jourdonnais',
+    name: 'Jourdonnais',
+    hp: 4,
+    ability: 'Kdykoli je cílem BANG!, může si „líznout!“; pokud je ♥, útok mine (jako Barel).',
+    epithet: 'Šťastlivec'
+  },
+  {
+    id: 'kit_carlson',
+    name: 'Kit Carlson',
+    hp: 4,
+    ability: 'Ve fázi 1 se podívá na vrchní 3 karty balíčku, 2 si vezme a 1 vrátí zpět na vrch.',
+    epithet: 'Stopař'
+  },
+  {
+    id: 'lucky_duke',
+    name: 'Lucky Duke',
+    hp: 4,
+    ability: 'Kdykoli si má „líznout!“ (Barel, Vězení, Dynamit), otočí 2 karty a vybere si jednu.',
+    epithet: 'Hazardér'
+  },
+  {
+    id: 'paul_regret',
+    name: 'Paul Regret',
+    hp: 3,
+    ability: 'Všichni ostatní hráči ho vidí na vzdálenost o 1 větší (+1 vzdálenost k němu).',
+    epithet: 'Nedostižný'
+  },
+  {
+    id: 'pedro_ramirez',
+    name: 'Pedro Ramirez',
+    hp: 4,
+    ability: 'Ve fázi 1 si může první kartu vzít z vrchu odhazovacího balíčku.',
+    epithet: 'Mrchožrout'
+  },
+  {
+    id: 'rose_doolan',
+    name: 'Rose Doolan',
+    hp: 4,
+    ability: 'Vidí všechny ostatní hráče na vzdálenost o 1 menší (-1 vzdálenost od ní).',
+    epithet: 'Bystrozraká'
+  },
+  {
+    id: 'sid_ketchum',
+    name: 'Sid Ketchum',
+    hp: 4,
+    ability: 'Kdykoli ve svém tahu může odhodit 2 karty z ruky a přidat si 1 život.',
+    epithet: 'Ranhojič'
+  },
+  {
+    id: 'slab_the_killer',
+    name: 'Slab the Killer',
+    hp: 4,
+    ability: 'Hráč potřebuje 2 karty Vedle! k odvrácení jeho karty BANG!.',
+    epithet: 'Drsňák'
+  },
+  {
+    id: 'suzy_lafayette',
+    name: 'Suzy Lafayette',
+    hp: 4,
+    ability: 'Jakmile nemá v ruce žádnou kartu, okamžitě si lízne 1 kartu z balíčku.',
+    epithet: 'Rychlá ruka'
+  },
+  {
+    id: 'vulture_sam',
+    name: 'Vulture Sam',
+    hp: 4,
+    ability: 'Kdykoli je nějaký hráč vyřazen ze hry, vezme si všechny jeho karty.',
+    epithet: 'Sup'
+  },
+  {
+    id: 'willy_the_kid',
+    name: 'Willy the Kid',
+    hp: 4,
+    ability: 'Ve svém tahu může zahrát libovolný počet karet BANG!.',
+    epithet: 'Pistolník'
+  }
+];
+
+// Card templates (22 distinct playing card types)
+const CARD_TYPES = {
+  bang: {
+    name: 'BANG!',
+    border: 'brown',
+    category: 'action',
+    symbols: ['🎯 Dostřel', '💥 -1 život'],
+    desc: 'Vystřel na hráče v dostřelu. Cíl musí zahrát Vedle!, jinak ztratí 1 život.'
+  },
+  missed: {
+    name: 'Vedle!',
+    border: 'brown',
+    category: 'action',
+    symbols: ['🛡️ Obrana'],
+    desc: 'Zruší účinek karty BANG! zahrané proti tobě (mimo svůj tah).'
+  },
+  beer: {
+    name: 'Pivo',
+    border: 'brown',
+    category: 'action',
+    symbols: ['🍺 +1 život'],
+    desc: 'Přidá ti 1 život (max. do tvého počtu životů). Lze hrát i při smrtelném zásahu.'
+  },
+  saloon: {
+    name: 'Saloon',
+    border: 'brown',
+    category: 'action',
+    symbols: ['👥 Všichni', '🍺 +1 život'],
+    desc: 'Všichni hráči ve hře si přidají 1 život.'
+  },
+  stagecoach: {
+    name: 'Dostavník',
+    border: 'brown',
+    category: 'action',
+    symbols: ['🃏 +2 karty'],
+    desc: 'Lízni si 2 karty z dobíracího balíčku.'
+  },
+  wells_fargo: {
+    name: 'Wells Fargo',
+    border: 'brown',
+    category: 'action',
+    symbols: ['🃏 +3 karty'],
+    desc: 'Lízni si 3 karty z dobíracího balíčku.'
+  },
+  panic: {
+    name: 'Panika!',
+    border: 'brown',
+    category: 'action',
+    symbols: ['📏 Vzdál. 1', '✋ Vezmi kartu'],
+    desc: 'Vezmi si 1 kartu od hráče ve vzdálenosti 1 (z ruky náhodně nebo ze stolu).'
+  },
+  cat_balou: {
+    name: 'Cat Balou',
+    border: 'brown',
+    category: 'action',
+    symbols: ['🌐 Kdekoli', '🗑️ Odhoď kartu'],
+    desc: 'Nech libovolného hráče odhodit 1 kartu (z ruky náhodně nebo ze stolu).'
+  },
+  gatling: {
+    name: 'Kulomet',
+    border: 'brown',
+    category: 'action',
+    symbols: ['👥 Všichni ostatní', '💥 BANG!'],
+    desc: 'Všichni ostatní hráči musí zahrát Vedle!, jinak ztratí 1 život.'
+  },
+  indians: {
+    name: 'Indiáni!',
+    border: 'brown',
+    category: 'action',
+    symbols: ['👥 Všichni ostatní', '🔥 Odhoď BANG!'],
+    desc: 'Všichni ostatní hráči musí odhodit BANG!, jinak ztratí 1 život.'
+  },
+  duel: {
+    name: 'Duel',
+    border: 'brown',
+    category: 'action',
+    symbols: ['🌐 Kdekoli', '⚔️ Přestřelka'],
+    desc: 'Vyzvi hráče na souboj. Střídavě odhazujete BANG! (začíná vyzvaný). Kdo nemá, ztrácí 1 život.'
+  },
+  general_store: {
+    name: 'Hokynářství',
+    border: 'brown',
+    category: 'action',
+    symbols: ['👥 Všichni', '🃏 Výběr'],
+    desc: 'Otoč tolik karet, kolik je hráčů. Každý si postupně jednu vybere.'
+  },
+  volcanic: {
+    name: 'Volcanic',
+    border: 'blue',
+    category: 'weapon',
+    range: 1,
+    unlimitedBang: true,
+    symbols: ['🔫 Dostřel 1', '∞ BANG!'],
+    desc: 'Dostřel 1. Můžeš hrát libovolný počet karet BANG! za tah.'
+  },
+  schofield: {
+    name: 'Schofield',
+    border: 'blue',
+    category: 'weapon',
+    range: 2,
+    symbols: ['🔫 Dostřel 2'],
+    desc: 'Zbraň s dostřelem 2.'
+  },
+  remington: {
+    name: 'Remington',
+    border: 'blue',
+    category: 'weapon',
+    range: 3,
+    symbols: ['🔫 Dostřel 3'],
+    desc: 'Zbraň s dostřelem 3.'
+  },
+  carabine: {
+    name: 'Rev. Carabine',
+    border: 'blue',
+    category: 'weapon',
+    range: 4,
+    symbols: ['🔫 Dostřel 4'],
+    desc: 'Zbraň s dostřelem 4.'
+  },
+  winchester: {
+    name: 'Winchester',
+    border: 'blue',
+    category: 'weapon',
+    range: 5,
+    symbols: ['🔫 Dostřel 5'],
+    desc: 'Zbraň s dostřelem 5.'
+  },
+  barrel: {
+    name: 'Barel',
+    border: 'blue',
+    category: 'equipment',
+    symbols: ['🛡️ ♥ = Vedle!'],
+    desc: 'Kdykoli jsi cílem BANG!, „lízni si!“; pokud je ♥, útok mine.'
+  },
+  mustang: {
+    name: 'Mustang',
+    border: 'blue',
+    category: 'equipment',
+    symbols: ['🐎 +1 vzdál. k tobě'],
+    desc: 'Ostatní hráči tě vidí na vzdálenost o 1 větší.'
+  },
+  scope: {
+    name: 'Hledí',
+    border: 'blue',
+    category: 'equipment',
+    symbols: ['🔭 -1 vzdál. od tebe'],
+    desc: 'Vidíš ostatní hráče na vzdálenost o 1 menší.'
+  },
+  jail: {
+    name: 'Vězení',
+    border: 'blue',
+    category: 'hazard',
+    symbols: ['⛓️ ♥ = Útěk'],
+    desc: 'Vylož před hráče (ne Šerifa). Na začátku tahu si „lízne!“; bez ♥ vynechá tah.'
+  },
+  dynamite: {
+    name: 'Dynamit',
+    border: 'blue',
+    category: 'hazard',
+    symbols: ['🧨 2-9♠ = -3 ♥'],
+    desc: 'Na začátku tahu si „lízni!“; 2–9♠ = výbuch (-3 životy), jinak jde dál.'
+  }
+};
+
+// Exact 80-card deck specification (type, rank, suit)
+const DECK_SPEC = [
+  // BANG! (25)
+  ['bang', 'A', 'S'], ['bang', 'Q', 'H'], ['bang', 'K', 'H'], ['bang', 'A', 'H'],
+  ['bang', '2', 'D'], ['bang', '3', 'D'], ['bang', '4', 'D'], ['bang', '5', 'D'],
+  ['bang', '6', 'D'], ['bang', '7', 'D'], ['bang', '8', 'D'], ['bang', '9', 'D'],
+  ['bang', '10', 'D'], ['bang', 'J', 'D'], ['bang', 'Q', 'D'], ['bang', 'K', 'D'],
+  ['bang', 'A', 'D'], ['bang', '2', 'C'], ['bang', '3', 'C'], ['bang', '4', 'C'],
+  ['bang', '5', 'C'], ['bang', '6', 'C'], ['bang', '7', 'C'], ['bang', '8', 'C'],
+  ['bang', '9', 'C'],
+  // Vedle! (12)
+  ['missed', '2', 'S'], ['missed', '3', 'S'], ['missed', '4', 'S'], ['missed', '5', 'S'],
+  ['missed', '6', 'S'], ['missed', '7', 'S'], ['missed', '8', 'S'],
+  ['missed', '10', 'C'], ['missed', 'J', 'C'], ['missed', 'Q', 'C'], ['missed', 'K', 'C'],
+  ['missed', 'A', 'C'],
+  // Pivo (6)
+  ['beer', '6', 'H'], ['beer', '7', 'H'], ['beer', '8', 'H'],
+  ['beer', '9', 'H'], ['beer', '10', 'H'], ['beer', 'J', 'H'],
+  // Saloon (1)
+  ['saloon', '5', 'H'],
+  // Dostavník (2)
+  ['stagecoach', '9', 'S'], ['stagecoach', '9', 'S'],
+  // Wells Fargo (1)
+  ['wells_fargo', '3', 'H'],
+  // Panika! (4)
+  ['panic', 'J', 'H'], ['panic', 'Q', 'H'], ['panic', 'A', 'H'], ['panic', '8', 'D'],
+  // Cat Balou (4)
+  ['cat_balou', 'K', 'H'], ['cat_balou', '9', 'D'], ['cat_balou', '10', 'D'], ['cat_balou', 'J', 'D'],
+  // Kulomet (1)
+  ['gatling', '10', 'H'],
+  // Indiáni! (2)
+  ['indians', 'K', 'D'], ['indians', 'A', 'D'],
+  // Duel (3)
+  ['duel', 'J', 'S'], ['duel', 'Q', 'D'], ['duel', '8', 'C'],
+  // Hokynářství (2)
+  ['general_store', 'Q', 'S'], ['general_store', '9', 'C'],
+  // Zbraně (8)
+  ['volcanic', '10', 'S'], ['volcanic', '10', 'C'],
+  ['schofield', 'K', 'S'], ['schofield', 'J', 'C'], ['schofield', 'Q', 'C'],
+  ['remington', 'K', 'C'],
+  ['carabine', 'A', 'C'],
+  ['winchester', '8', 'S'],
+  // Barel (2)
+  ['barrel', 'Q', 'S'], ['barrel', 'K', 'S'],
+  // Mustang (2)
+  ['mustang', '8', 'H'], ['mustang', '9', 'H'],
+  // Hledí (1)
+  ['scope', 'A', 'S'],
+  // Vězení (3)
+  ['jail', '10', 'S'], ['jail', 'J', 'S'], ['jail', '4', 'H'],
+  // Dynamit (1)
+  ['dynamite', '2', 'H']
+];
+
+function buildDeck() {
+  return DECK_SPEC.map(([type, rank, suit], idx) => {
+    const tpl = CARD_TYPES[type];
+    return {
+      uid: `card_${idx}_${type}_${rank}${suit}`,
+      type,
+      rank,
+      suit,
+      ...tpl
+    };
+  });
+}
+
+function getRoleDistribution(playerCount) {
+  switch (playerCount) {
+    case 4: return ['sheriff', 'renegade', 'outlaw', 'outlaw'];
+    case 5: return ['sheriff', 'renegade', 'outlaw', 'outlaw', 'deputy'];
+    case 6: return ['sheriff', 'renegade', 'outlaw', 'outlaw', 'outlaw', 'deputy'];
+    case 7: return ['sheriff', 'renegade', 'outlaw', 'outlaw', 'outlaw', 'deputy', 'deputy'];
+    default: return ['sheriff', 'renegade', 'outlaw', 'outlaw'];
+  }
+}
+
+// Detailed Wild West SVG artwork for all 22 playing card types, 16 characters, 4 roles, and card back
+
+function getCardArtSVG(type) {
+  const s = (inner, bg = '#f4e4c1') =>
+    `<svg viewBox="0 0 120 84" class="card-art-svg" xmlns="http://www.w3.org/2000/svg">
+      <rect width="120" height="84" rx="4" fill="${bg}"/>
+      <rect x="2" y="2" width="116" height="80" rx="3" fill="none" stroke="#8b5a2b" stroke-width="0.8" stroke-dasharray="2 2" opacity="0.45"/>
+      ${inner}
+    </svg>`;
+
+  switch (type) {
+    case 'bang':
+      return s(`
+        <circle cx="84" cy="36" r="24" fill="#e67e22" opacity="0.22"/>
+        <path d="M84 12 L88 28 L104 24 L92 36 L108 44 L90 44 L94 60 L82 46 L70 56 L76 42 L62 36 L76 32 Z" fill="#d9534f" stroke="#7c2d12" stroke-width="1.5"/>
+        <path d="M83 22 L86 32 L96 32 L88 38 L92 48 L82 41 L74 46 L78 37 L70 33 L79 32 Z" fill="#f59e0b"/>
+        <!-- Revolver -->
+        <g transform="translate(14,24) rotate(-8)">
+          <rect x="22" y="14" width="38" height="7" rx="1.5" fill="#4b5563" stroke="#1f2937" stroke-width="1.5"/>
+          <rect x="55" y="11" width="4" height="5" fill="#374151"/>
+          <rect x="18" y="16" width="16" height="14" rx="2" fill="#6b7280" stroke="#1f2937" stroke-width="1.5"/>
+          <circle cx="26" cy="23" r="4.5" fill="#374151"/>
+          <path d="M18 22 C10 22 6 32 8 44 L17 45 C16 36 18 31 23 30 Z" fill="#78350f" stroke="#451a03" stroke-width="1.5"/>
+          <path d="M24 30 C24 37 32 37 32 30" fill="none" stroke="#1f2937" stroke-width="1.8"/>
+        </g>
+      `, '#fae8c8');
+
+    case 'missed':
+      return s(`
+        <!-- Cowboy hat flying off + bullet whizzing past -->
+        <path d="M15 24 L98 18" stroke="#dc2626" stroke-width="1.5" stroke-dasharray="4 3"/>
+        <ellipse cx="98" cy="18" rx="5" ry="2.2" fill="#b45309" stroke="#451a03" stroke-width="1"/>
+        <path d="M90 15 L102 15 M86 21 L100 21" stroke="#9ca3af" stroke-width="1.2"/>
+        <!-- Dodging Hat -->
+        <g transform="translate(32,30) rotate(14)">
+          <ellipse cx="28" cy="30" rx="30" ry="7" fill="#92400e" stroke="#451a03" stroke-width="1.5"/>
+          <path d="M12 28 C14 10 20 8 28 11 C36 8 42 10 44 28 Z" fill="#b45309" stroke="#451a03" stroke-width="1.5"/>
+          <path d="M13 24 Q28 28 43 24" fill="none" stroke="#fef3c7" stroke-width="2.5"/>
+        </g>
+        <path d="M20 56 Q26 42 36 46" fill="none" stroke="#6b7280" stroke-width="1.5" stroke-dasharray="2 2"/>
+      `, '#f3e7d3');
+
+    case 'beer':
+      return s(`
+        <!-- Frothy Beer Mug -->
+        <rect x="40" y="26" width="34" height="44" rx="4" fill="#d97706" stroke="#78350f" stroke-width="2"/>
+        <rect x="44" y="30" width="26" height="36" rx="2" fill="#f59e0b"/>
+        <path d="M74 34 C86 34 86 58 74 58" fill="none" stroke="#78350f" stroke-width="4.5"/>
+        <path d="M74 34 C86 34 86 58 74 58" fill="none" stroke="#d97706" stroke-width="2"/>
+        <!-- Foam -->
+        <circle cx="44" cy="24" r="7" fill="#fffbeb" stroke="#d6d3d1" stroke-width="1"/>
+        <circle cx="54" cy="21" r="8" fill="#fffbeb" stroke="#d6d3d1" stroke-width="1"/>
+        <circle cx="66" cy="23" r="7" fill="#fffbeb" stroke="#d6d3d1" stroke-width="1"/>
+        <path d="M48 30 L48 44 Q51 47 52 38 L52 30" fill="#fffbeb"/>
+        <line x1="50" y1="36" x2="50" y2="62" stroke="#fde68a" stroke-width="1.5" opacity="0.7"/>
+        <line x1="60" y1="36" x2="60" y2="62" stroke="#fde68a" stroke-width="1.5" opacity="0.7"/>
+      `, '#fef3c7');
+
+    case 'saloon':
+      return s(`
+        <!-- Swinging Saloon Doors -->
+        <rect x="18" y="10" width="84" height="66" fill="#78350f" stroke="#451a03" stroke-width="2"/>
+        <rect x="26" y="18" width="68" height="58" fill="#291709"/>
+        <!-- Left Door -->
+        <path d="M27 28 L57 32 L57 68 L27 64 Z" fill="#b45309" stroke="#451a03" stroke-width="1.5"/>
+        <line x1="32" y1="34" x2="52" y2="36" stroke="#78350f" stroke-width="2"/>
+        <line x1="32" y1="42" x2="52" y2="44" stroke="#78350f" stroke-width="2"/>
+        <line x1="32" y1="50" x2="52" y2="52" stroke="#78350f" stroke-width="2"/>
+        <!-- Right Door -->
+        <path d="M93 28 L63 32 L63 68 L93 64 Z" fill="#b45309" stroke="#451a03" stroke-width="1.5"/>
+        <line x1="68" y1="36" x2="88" y2="34" stroke="#78350f" stroke-width="2"/>
+        <line x1="68" y1="44" x2="88" y2="42" stroke="#78350f" stroke-width="2"/>
+        <line x1="68" y1="52" x2="88" y2="50" stroke="#78350f" stroke-width="2"/>
+        <!-- Sign -->
+        <rect x="34" y="8" width="52" height="14" rx="2" fill="#fde68a" stroke="#78350f" stroke-width="1.5"/>
+        <text x="60" y="18" text-anchor="middle" font-size="9" font-weight="bold" fill="#78350f" font-family="serif">SALOON</text>
+      `, '#f5e1be');
+
+    case 'stagecoach':
+      return s(`
+        <!-- Stagecoach -->
+        <line x1="8" y1="68" x2="112" y2="68" stroke="#92400e" stroke-width="2"/>
+        <path d="M30 24 L86 24 L92 52 L24 52 Z" fill="#b91c1c" stroke="#451a03" stroke-width="2"/>
+        <rect x="38" y="29" width="16" height="14" rx="2" fill="#fef3c7" stroke="#451a03" stroke-width="1.2"/>
+        <rect x="62" y="29" width="16" height="14" rx="2" fill="#fef3c7" stroke="#451a03" stroke-width="1.2"/>
+        <rect x="26" y="18" width="64" height="6" rx="2" fill="#78350f" stroke="#451a03" stroke-width="1.2"/>
+        <!-- Wheels -->
+        <circle cx="36" cy="58" r="11" fill="none" stroke="#451a03" stroke-width="2.5"/>
+        <circle cx="36" cy="58" r="3" fill="#78350f"/>
+        <line x1="25" y1="58" x2="47" y2="58" stroke="#78350f" stroke-width="1.2"/>
+        <line x1="36" y1="47" x2="36" y2="69" stroke="#78350f" stroke-width="1.2"/>
+        <circle cx="82" cy="58" r="11" fill="none" stroke="#451a03" stroke-width="2.5"/>
+        <circle cx="82" cy="58" r="3" fill="#78350f"/>
+        <line x1="71" y1="58" x2="93" y2="58" stroke="#78350f" stroke-width="1.2"/>
+        <line x1="82" y1="47" x2="82" y2="69" stroke="#78350f" stroke-width="1.2"/>
+      `, '#f6e7cb');
+
+    case 'wells_fargo':
+      return s(`
+        <!-- Armored Gold Chest & Wagon -->
+        <rect x="24" y="26" width="72" height="36" rx="3" fill="#1e3a8a" stroke="#172554" stroke-width="2"/>
+        <rect x="28" y="30" width="64" height="28" fill="#1d4ed8"/>
+        <rect x="24" y="39" width="72" height="5" fill="#fbbf24"/>
+        <text x="60" y="22" text-anchor="middle" font-size="8.5" font-weight="bold" fill="#92400e" font-family="serif">WELLS FARGO</text>
+        <circle cx="38" cy="64" r="9" fill="#78350f" stroke="#451a03" stroke-width="2"/>
+        <circle cx="38" cy="64" r="3" fill="#fbbf24"/>
+        <circle cx="82" cy="64" r="9" fill="#78350f" stroke="#451a03" stroke-width="2"/>
+        <circle cx="82" cy="64" r="3" fill="#fbbf24"/>
+        <rect x="52" y="37" width="16" height="12" rx="2" fill="#f59e0b" stroke="#78350f" stroke-width="1.2"/>
+      `, '#f6e7cb');
+
+    case 'panic':
+      return s(`
+        <!-- Grabbing hand / Lasso -->
+        <path d="M16 64 Q40 44 58 46" fill="none" stroke="#92400e" stroke-width="3" stroke-linecap="round"/>
+        <ellipse cx="76" cy="40" rx="24" ry="16" fill="none" stroke="#b45309" stroke-width="2.5" stroke-dasharray="4 2"/>
+        <!-- Card being snatched -->
+        <g transform="translate(62,20) rotate(12)">
+          <rect x="0" y="0" width="24" height="34" rx="2" fill="#fffbeb" stroke="#78350f" stroke-width="1.5"/>
+          <text x="12" y="21" text-anchor="middle" font-size="14" font-weight="bold" fill="#b91c1c">?</text>
+        </g>
+        <text x="28" y="32" font-size="18" font-weight="bold" fill="#b91c1c" font-family="serif">!</text>
+      `, '#fae4c4');
+
+    case 'cat_balou':
+      return s(`
+        <!-- Lasso & Wanted silhouette -->
+        <circle cx="60" cy="30" r="14" fill="#78350f"/>
+        <ellipse cx="60" cy="24" rx="24" ry="5" fill="#451a03"/>
+        <path d="M40 70 C40 48 80 48 80 70 Z" fill="#991b1b"/>
+        <!-- Lasso loop -->
+        <ellipse cx="60" cy="46" rx="28" ry="9" fill="none" stroke="#d97706" stroke-width="2.5"/>
+        <path d="M88 46 Q104 52 108 72" fill="none" stroke="#d97706" stroke-width="2.2"/>
+      `, '#f5dfc0');
+
+    case 'gatling':
+      return s(`
+        <!-- Gatling Gun on tripod -->
+        <line x1="48" y1="46" x2="34" y2="74" stroke="#451a03" stroke-width="3"/>
+        <line x1="54" y1="46" x2="68" y2="74" stroke="#451a03" stroke-width="3"/>
+        <circle cx="51" cy="48" r="12" fill="none" stroke="#78350f" stroke-width="3"/>
+        <!-- Multi-barrels -->
+        <rect x="34" y="26" width="54" height="14" rx="2" fill="#4b5563" stroke="#1f2937" stroke-width="1.5"/>
+        <line x1="36" y1="30" x2="88" y2="30" stroke="#9ca3af" stroke-width="1.5"/>
+        <line x1="36" y1="34" x2="88" y2="34" stroke="#9ca3af" stroke-width="1.5"/>
+        <line x1="36" y1="37" x2="88" y2="37" stroke="#9ca3af" stroke-width="1.5"/>
+        <!-- Muzzle flashes -->
+        <path d="M92 24 L106 20 L98 31 L110 35 L95 39 L102 48 L89 41 Z" fill="#f59e0b" stroke="#dc2626" stroke-width="1"/>
+      `, '#f4e0bc');
+
+    case 'indians':
+      return s(`
+        <!-- Crossed Tomahawk & Feathers -->
+        <line x1="30" y1="68" x2="84" y2="18" stroke="#78350f" stroke-width="4" stroke-linecap="round"/>
+        <path d="M74 16 L94 24 L82 36 L68 24 Z" fill="#6b7280" stroke="#1f2937" stroke-width="1.5"/>
+        <!-- Feathers -->
+        <path d="M40 20 Q28 36 44 52 Q52 34 40 20 Z" fill="#dc2626" stroke="#7f1d1d" stroke-width="1.2"/>
+        <path d="M52 16 Q42 32 54 46 Q62 30 52 16 Z" fill="#f59e0b" stroke="#78350f" stroke-width="1.2"/>
+        <path d="M62 52 L92 68" stroke="#78350f" stroke-width="3" stroke-linecap="round"/>
+        <polygon points="24,62 34,58 30,68" fill="#9ca3af"/>
+      `, '#f6e3c2');
+
+    case 'duel':
+      return s(`
+        <!-- Two Crossed Pistols -->
+        <g transform="translate(16,18) rotate(22)">
+          <rect x="20" y="16" width="42" height="6" rx="1" fill="#374151" stroke="#111827" stroke-width="1.2"/>
+          <rect x="14" y="18" width="14" height="10" fill="#4b5563" stroke="#111827" stroke-width="1.2"/>
+          <path d="M14 24 C8 26 6 35 8 42 L16 42 C15 34 18 30 22 28 Z" fill="#78350f" stroke="#451a03" stroke-width="1.2"/>
+        </g>
+        <g transform="translate(104,18) scale(-1,1) rotate(22)">
+          <rect x="20" y="16" width="42" height="6" rx="1" fill="#374151" stroke="#111827" stroke-width="1.2"/>
+          <rect x="14" y="18" width="14" height="10" fill="#4b5563" stroke="#111827" stroke-width="1.2"/>
+          <path d="M14 24 C8 26 6 35 8 42 L16 42 C15 34 18 30 22 28 Z" fill="#78350f" stroke="#451a03" stroke-width="1.2"/>
+        </g>
+        <circle cx="60" cy="24" r="6" fill="#f59e0b" opacity="0.7"/>
+      `, '#f4e1c1');
+
+    case 'general_store':
+      return s(`
+        <!-- General Store Goods: Crate, Hat, Bottle -->
+        <rect x="22" y="42" width="76" height="30" rx="2" fill="#b45309" stroke="#451a03" stroke-width="1.5"/>
+        <line x1="22" y1="52" x2="98" y2="52" stroke="#78350f" stroke-width="1.5"/>
+        <line x1="22" y1="62" x2="98" y2="62" stroke="#78350f" stroke-width="1.5"/>
+        <!-- Items on counter -->
+        <rect x="32" y="20" width="12" height="22" rx="2" fill="#15803d" stroke="#14532d" stroke-width="1.2"/>
+        <rect x="35" y="14" width="6" height="6" fill="#78350f"/>
+        <circle cx="62" cy="30" r="11" fill="#d97706" stroke="#78350f" stroke-width="1.5"/>
+        <rect x="78" y="22" width="14" height="20" rx="1" fill="#fef3c7" stroke="#78350f" stroke-width="1.2"/>
+      `, '#f5e4c8');
+
+    case 'volcanic':
+      return s(`
+        <!-- Volcanic Repeating Pistol (fast multi-shot) -->
+        <g transform="translate(14,18)">
+          <rect x="34" y="16" width="54" height="9" rx="1.5" fill="#374151" stroke="#111827" stroke-width="1.5"/>
+          <rect x="34" y="25" width="48" height="5" fill="#6b7280" stroke="#111827" stroke-width="1"/>
+          <rect x="18" y="16" width="22" height="16" rx="2" fill="#d97706" stroke="#78350f" stroke-width="1.5"/>
+          <path d="M18 24 C10 26 8 38 10 48 L20 48 C18 39 21 34 26 32 Z" fill="#78350f" stroke="#451a03" stroke-width="1.5"/>
+          <circle cx="30" cy="36" r="5" fill="none" stroke="#111827" stroke-width="2"/>
+        </g>
+        <text x="96" y="24" font-size="15" font-weight="bold" fill="#2b5b84">∞</text>
+      `, '#e4ecf4');
+
+    case 'schofield':
+      return s(`
+        <!-- Schofield Revolver -->
+        <g transform="translate(12,18)">
+          <rect x="36" y="15" width="56" height="7" rx="1" fill="#4b5563" stroke="#111827" stroke-width="1.5"/>
+          <rect x="20" y="16" width="18" height="15" rx="2" fill="#9ca3af" stroke="#111827" stroke-width="1.5"/>
+          <circle cx="29" cy="23" r="5" fill="#4b5563"/>
+          <path d="M20 23 C12 25 9 38 11 49 L21 49 C19 39 22 34 27 31 Z" fill="#92400e" stroke="#451a03" stroke-width="1.5"/>
+          <circle cx="32" cy="35" r="4.5" fill="none" stroke="#111827" stroke-width="1.8"/>
+        </g>
+      `, '#e4ecf4');
+
+    case 'remington':
+      return s(`
+        <!-- Long-barrel Remington -->
+        <g transform="translate(8,20)">
+          <rect x="32" y="14" width="70" height="6.5" rx="1" fill="#374151" stroke="#111827" stroke-width="1.5"/>
+          <path d="M38 20 L82 20 L74 26 L38 24 Z" fill="#6b7280"/>
+          <rect x="18" y="15" width="17" height="14" rx="2" fill="#b45309" stroke="#451a03" stroke-width="1.5"/>
+          <path d="M18 22 C10 25 8 37 10 47 L20 47 C18 37 20 33 25 30 Z" fill="#78350f" stroke="#451a03" stroke-width="1.5"/>
+        </g>
+      `, '#e4ecf4');
+
+    case 'carabine':
+      return s(`
+        <!-- Rev. Carabine -->
+        <g transform="translate(6,22) rotate(-6)">
+          <rect x="28" y="16" width="76" height="6" rx="1" fill="#374151" stroke="#111827" stroke-width="1.5"/>
+          <path d="M4 26 L30 16 L34 24 L8 38 Z" fill="#78350f" stroke="#451a03" stroke-width="1.5"/>
+          <circle cx="34" cy="21" r="6" fill="#9ca3af" stroke="#111827" stroke-width="1.5"/>
+        </g>
+      `, '#e4ecf4');
+
+    case 'winchester':
+      return s(`
+        <!-- Winchester Lever-Action Rifle -->
+        <g transform="translate(4,24) rotate(-8)">
+          <rect x="30" y="15" width="80" height="5.5" rx="1" fill="#374151" stroke="#111827" stroke-width="1.4"/>
+          <rect x="36" y="20.5" width="54" height="4" fill="#92400e"/>
+          <path d="M4 28 L34 15 L36 25 L8 42 Z" fill="#92400e" stroke="#451a03" stroke-width="1.5"/>
+          <rect x="28" y="15" width="16" height="10" fill="#d97706" stroke="#78350f" stroke-width="1.2"/>
+          <ellipse cx="26" cy="29" rx="6" ry="3.5" fill="none" stroke="#111827" stroke-width="1.8"/>
+        </g>
+      `, '#e4ecf4');
+
+    case 'barrel':
+      return s(`
+        <!-- Oak Barrel -->
+        <ellipse cx="60" cy="42" rx="26" ry="30" fill="#b45309" stroke="#451a03" stroke-width="2"/>
+        <ellipse cx="60" cy="18" rx="20" ry="6" fill="#d97706" stroke="#451a03" stroke-width="1.5"/>
+        <path d="M36 30 Q60 36 84 30" fill="none" stroke="#374151" stroke-width="3.5"/>
+        <path d="M35 54 Q60 60 85 54" fill="none" stroke="#374151" stroke-width="3.5"/>
+        <line x1="50" y1="23" x2="48" y2="70" stroke="#78350f" stroke-width="1.2"/>
+        <line x1="70" y1="23" x2="72" y2="70" stroke="#78350f" stroke-width="1.2"/>
+      `, '#e4ecf4');
+
+    case 'mustang':
+      return s(`
+        <!-- Galloping Mustang Silhouette -->
+        <path d="M22 58 Q30 38 50 38 L70 34 Q82 20 92 22 L96 28 L86 34 Q84 44 76 48 L84 68 L76 68 L68 50 L46 50 L36 68 L28 68 L36 52 L22 64 Z" fill="#78350f" stroke="#451a03" stroke-width="1.5"/>
+        <path d="M74 34 Q78 24 88 22" fill="none" stroke="#451a03" stroke-width="3"/>
+        <line x1="14" y1="70" x2="106" y2="70" stroke="#92400e" stroke-width="1.5" stroke-dasharray="6 3"/>
+      `, '#e4ecf4');
+
+    case 'scope':
+      return s(`
+        <!-- Brass Spyglass / Appaloosa Scope -->
+        <g transform="translate(14,32) rotate(-14)">
+          <rect x="8" y="8" width="24" height="10" rx="2" fill="#d97706" stroke="#78350f" stroke-width="1.5"/>
+          <rect x="32" y="6" width="28" height="14" rx="2" fill="#f59e0b" stroke="#78350f" stroke-width="1.5"/>
+          <rect x="60" y="3" width="30" height="20" rx="2" fill="#b45309" stroke="#78350f" stroke-width="1.5"/>
+          <ellipse cx="90" cy="13" rx="3" ry="10" fill="#93c5fd" stroke="#1e3a8a" stroke-width="1.5"/>
+        </g>
+      `, '#e4ecf4');
+
+    case 'jail':
+      return s(`
+        <!-- Iron Jail Bars -->
+        <rect x="20" y="10" width="80" height="64" fill="#374151" stroke="#111827" stroke-width="2"/>
+        <rect x="26" y="16" width="68" height="52" fill="#1f2937"/>
+        <line x1="38" y1="14" x2="38" y2="70" stroke="#9ca3af" stroke-width="4"/>
+        <line x1="52" y1="14" x2="52" y2="70" stroke="#9ca3af" stroke-width="4"/>
+        <line x1="68" y1="14" x2="68" y2="70" stroke="#9ca3af" stroke-width="4"/>
+        <line x1="82" y1="14" x2="82" y2="70" stroke="#9ca3af" stroke-width="4"/>
+        <line x1="24" y1="42" x2="96" y2="42" stroke="#6b7280" stroke-width="3"/>
+      `, '#e4ecf4');
+
+    case 'dynamite':
+      return s(`
+        <!-- Bundle of Dynamite with Burning Fuse -->
+        <rect x="42" y="28" width="11" height="44" rx="2" fill="#dc2626" stroke="#7f1d1d" stroke-width="1.5"/>
+        <rect x="54" y="26" width="11" height="46" rx="2" fill="#ef4444" stroke="#7f1d1d" stroke-width="1.5"/>
+        <rect x="66" y="28" width="11" height="44" rx="2" fill="#dc2626" stroke="#7f1d1d" stroke-width="1.5"/>
+        <rect x="40" y="42" width="39" height="6" fill="#1f2937"/>
+        <rect x="40" y="56" width="39" height="6" fill="#1f2937"/>
+        <!-- Fuse & Spark -->
+        <path d="M59 26 Q62 12 78 14" fill="none" stroke="#78350f" stroke-width="2"/>
+        <polygon points="80,8 83,13 88,12 84,16 87,21 81,18 76,21 78,16 74,12 79,13" fill="#f59e0b" stroke="#dc2626" stroke-width="0.8"/>
+      `, '#fee2e2');
+
+    default:
+      return s(`<circle cx="60" cy="42" r="20" fill="#8b5a2b"/>`);
+  }
+}
+
+function getCharacterPortraitSVG(charId) {
+  const configs = {
+    bart_cassidy:    { skin: '#f3c6a5', hat: '#451a03', hatType: 'bowler', beard: '#78350f', extra: 'bandaid', bg: '#e8d5b5' },
+    black_jack:      { skin: '#eec09d', hat: '#1f2937', hatType: 'tophat', beard: '#111827', extra: 'cards', bg: '#dfd0b8' },
+    calamity_janet:  { skin: '#f8d5bd', hat: '#92400e', hatType: 'cowboy', beard: 'none', extra: 'braids', bg: '#f1dfc1' },
+    el_gringo:       { skin: '#d9a077', hat: '#78350f', hatType: 'sombrero', beard: '#1f2937', extra: 'poncho', bg: '#ead4b0' },
+    jesse_jones:     { skin: '#eec09d', hat: '#57534e', hatType: 'cowboy', beard: '#44403c', extra: 'bandana', bg: '#e4d3b5' },
+    jourdonnais:     { skin: '#f3c6a5', hat: '#292524', hatType: 'cap', beard: '#292524', extra: 'mustache', bg: '#ead9bd' },
+    kit_carlson:     { skin: '#e8b490', hat: '#78350f', hatType: 'trapper', beard: '#92400e', extra: 'scar', bg: '#e5d3b3' },
+    lucky_duke:      { skin: '#f3c6a5', hat: '#1e3a8a', hatType: 'tophat', beard: 'none', extra: 'monocle', bg: '#e6d7bd' },
+    paul_regret:     { skin: '#f5cfb3', hat: '#44403c', hatType: 'none', beard: '#78350f', extra: 'cigarette', bg: '#e8d7bc' },
+    pedro_ramirez:   { skin: '#d49a70', hat: '#78350f', hatType: 'sombrero', beard: '#1c1917', extra: 'bandana', bg: '#e5d0ae' },
+    rose_doolan:     { skin: '#f8d8c0', hat: '#7f1d1d', hatType: 'cowboy', beard: 'none', extra: 'earrings', bg: '#f2e0c4' },
+    sid_ketchum:     { skin: '#f3c6a5', hat: '#92400e', hatType: 'bowler', beard: '#d6d3d1', extra: 'glasses', bg: '#eae0cc' },
+    slab_the_killer: { skin: '#e5ae87', hat: '#292524', hatType: 'cowboy', beard: '#292524', extra: 'scar', bg: '#dfd0b6' },
+    suzy_lafayette:  { skin: '#fae0cb', hat: '#b45309', hatType: 'bonnet', beard: 'none', extra: 'braids', bg: '#f4e4ca' },
+    vulture_sam:     { skin: '#deb08e', hat: '#1c1917', hatType: 'tophat', beard: '#57534e', extra: 'coat', bg: '#dfd4be' },
+    willy_the_kid:   { skin: '#f5cfb3', hat: '#92400e', hatType: 'cowboy', beard: 'none', extra: 'bandana', bg: '#ecdcc0' }
+  };
+
+  const c = configs[charId] || configs.willy_the_kid;
+  let hatSVG = '';
+  if (c.hatType === 'cowboy') {
+    hatSVG = `<ellipse cx="50" cy="28" rx="34" ry="7" fill="${c.hat}" stroke="#1c1917" stroke-width="1.5"/>
+              <path d="M30 27 C32 10 42 10 50 13 C58 10 68 10 70 27 Z" fill="${c.hat}" stroke="#1c1917" stroke-width="1.5"/>`;
+  } else if (c.hatType === 'sombrero') {
+    hatSVG = `<ellipse cx="50" cy="29" rx="40" ry="8" fill="${c.hat}" stroke="#1c1917" stroke-width="1.5"/>
+              <path d="M34 27 C36 9 64 9 66 27 Z" fill="${c.hat}" stroke="#1c1917" stroke-width="1.5"/>
+              <path d="M35 24 Q50 28 65 24" fill="none" stroke="#f59e0b" stroke-width="2"/>`;
+  } else if (c.hatType === 'tophat') {
+    hatSVG = `<ellipse cx="50" cy="28" rx="28" ry="5" fill="${c.hat}" stroke="#111827" stroke-width="1.5"/>
+              <rect x="34" y="6" width="32" height="22" rx="2" fill="${c.hat}" stroke="#111827" stroke-width="1.5"/>
+              <rect x="34" y="22" width="32" height="4" fill="#b91c1c"/>`;
+  } else if (c.hatType === 'bowler') {
+    hatSVG = `<ellipse cx="50" cy="28" rx="28" ry="5" fill="${c.hat}" stroke="#1c1917" stroke-width="1.5"/>
+              <path d="M31 28 C31 10 69 10 69 28 Z" fill="${c.hat}" stroke="#1c1917" stroke-width="1.5"/>`;
+  } else if (c.hatType === 'bonnet' || c.hatType === 'trapper' || c.hatType === 'cap') {
+    hatSVG = `<path d="M26 32 C26 12 74 12 74 32 Z" fill="${c.hat}" stroke="#1c1917" stroke-width="1.5"/>
+              <ellipse cx="50" cy="31" rx="26" ry="5" fill="${c.hat}" stroke="#1c1917" stroke-width="1.2"/>`;
+  } else {
+    hatSVG = `<path d="M28 34 C28 16 72 16 72 34 Z" fill="#57534e"/>`;
+  }
+
+  let extraSVG = '';
+  if (c.extra === 'bandana') {
+    extraSVG = `<path d="M34 54 L66 54 L50 74 Z" fill="#b91c1c" stroke="#7f1d1d" stroke-width="1.2"/>`;
+  } else if (c.extra === 'poncho') {
+    extraSVG = `<path d="M18 84 L34 56 L66 56 L82 84 Z" fill="#b45309" stroke="#78350f" stroke-width="1.5"/>
+                <path d="M26 76 L74 76" stroke="#f59e0b" stroke-width="2.5"/>`;
+  } else if (c.extra === 'monocle') {
+    extraSVG = `<circle cx="58" cy="40" r="5.5" fill="none" stroke="#d97706" stroke-width="1.5"/>
+                <line x1="63" y1="42" x2="67" y2="56" stroke="#d97706" stroke-width="1"/>`;
+  } else if (c.extra === 'glasses') {
+    extraSVG = `<circle cx="42" cy="40" r="5" fill="none" stroke="#374151" stroke-width="1.3"/>
+                <circle cx="58" cy="40" r="5" fill="none" stroke="#374151" stroke-width="1.3"/>
+                <line x1="47" y1="40" x2="53" y2="40" stroke="#374151" stroke-width="1.3"/>`;
+  } else if (c.extra === 'scar') {
+    extraSVG = `<path d="M55 34 L63 48" stroke="#991b1b" stroke-width="1.6"/>`;
+  } else if (c.extra === 'bandaid') {
+    extraSVG = `<rect x="35" y="42" width="10" height="4" rx="1" transform="rotate(-15 40 44)" fill="#fde68a" stroke="#b45309" stroke-width="0.8"/>`;
+  } else if (c.extra === 'braids') {
+    extraSVG = `<path d="M30 42 L26 68 M70 42 L74 68" stroke="#78350f" stroke-width="4" stroke-linecap="round"/>`;
+  }
+
+  let beardSVG = '';
+  if (c.beard !== 'none') {
+    beardSVG = `<path d="M40 49 Q50 46 60 49 Q56 53 50 51 Q44 53 40 49 Z" fill="${c.beard}"/>`;
+  }
+
+  return `<svg viewBox="0 0 100 84" class="char-art-svg" xmlns="http://www.w3.org/2000/svg">
+    <rect width="100" height="84" rx="4" fill="${c.bg}"/>
+    <!-- Shoulders -->
+    <path d="M18 84 C20 62 34 58 50 58 C66 58 80 62 82 84 Z" fill="#57534e" stroke="#292524" stroke-width="1.5"/>
+    <!-- Head -->
+    <ellipse cx="50" cy="42" rx="18" ry="20" fill="${c.skin}" stroke="#451a03" stroke-width="1.5"/>
+    <!-- Eyes -->
+    <circle cx="42" cy="40" r="2.2" fill="#1c1917"/>
+    <circle cx="58" cy="40" r="2.2" fill="#1c1917"/>
+    <path d="M38 35 L46 36 M54 36 L62 35" stroke="#292524" stroke-width="1.5"/>
+    <!-- Mouth -->
+    <path d="M45 52 Q50 54 55 52" fill="none" stroke="#78350f" stroke-width="1.4"/>
+    ${beardSVG}
+    ${extraSVG}
+    ${hatSVG}
+  </svg>`;
+}
+
+function getRoleArtSVG(roleId) {
+  const s = (inner, bg) =>
+    `<svg viewBox="0 0 100 84" class="role-art-svg" xmlns="http://www.w3.org/2000/svg">
+      <rect width="100" height="84" rx="4" fill="${bg}"/>
+      ${inner}
+    </svg>`;
+
+  switch (roleId) {
+    case 'sheriff':
+      return s(`
+        <polygon points="50,10 58,31 80,31 62,44 69,66 50,53 31,66 38,44 20,31 42,31" fill="#eab308" stroke="#713f12" stroke-width="2"/>
+        <circle cx="50" cy="41" r="9" fill="#fef08a" stroke="#713f12" stroke-width="1.5"/>
+      `, '#fef3c7');
+    case 'deputy':
+      return s(`
+        <polygon points="50,12 57,32 78,32 61,44 67,65 50,52 33,65 39,44 22,32 43,32" fill="#60a5fa" stroke="#1e3a8a" stroke-width="2"/>
+        <circle cx="50" cy="41" r="8" fill="#dbeafe" stroke="#1e3a8a" stroke-width="1.5"/>
+      `, '#dbeafe');
+    case 'outlaw':
+      return s(`
+        <circle cx="50" cy="34" r="14" fill="#292524"/>
+        <ellipse cx="50" cy="28" rx="26" ry="5" fill="#1c1917"/>
+        <path d="M36 42 L64 42 L50 66 Z" fill="#b91c1c" stroke="#7f1d1d" stroke-width="1.5"/>
+        <circle cx="44" cy="35" r="2" fill="#fef3c7"/>
+        <circle cx="56" cy="35" r="2" fill="#fef3c7"/>
+      `, '#fee2e2');
+    case 'renegade':
+      return s(`
+        <path d="M50 12 L68 44 L50 72 L32 44 Z" fill="#78350f" stroke="#451a03" stroke-width="2"/>
+        <path d="M50 18 L60 44 L50 66 L40 44 Z" fill="#f59e0b"/>
+        <circle cx="50" cy="44" r="5" fill="#1c1917"/>
+      `, '#ede0d4');
+    default:
+      return s(``, '#f4e4c1');
+  }
+}
+
+// Complete Official BANG! Base Game Engine (Async/Promise-driven for smooth UI & AI)
+
+class BangEngine {
+  constructor(ui) {
+    this.ui = ui;
+    this.players = [];
+    this.deck = [];
+    this.discard = [];
+    this.turnIndex = 0;
+    this.bangsPlayedThisTurn = 0;
+    this.gameOver = false;
+    this.winner = null;
+    this.logEntries = [];
+    this.phase = 'setup'; // setup, start, draw, play, discard, gameover
+  }
+
+  shuffle(arr) {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  log(msg, tone = 'info') {
+    this.logEntries.unshift({ msg, tone, time: new Date().toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) });
+    if (this.logEntries.length > 60) this.logEntries.pop();
+    this.ui.renderLog();
+  }
+
+  startNewGame(playerCount, chosenCharId = null) {
+    this.gameOver = false;
+    this.winner = null;
+    this.logEntries = [];
+    this.deck = this.shuffle(buildDeck());
+    this.discard = [];
+
+    const roleIds = this.shuffle(getRoleDistribution(playerCount));
+    const chars = this.shuffle([...CHARACTERS]);
+
+    // Ensure human gets chosenCharId if specified
+    let humanChar;
+    if (chosenCharId && chosenCharId !== 'random') {
+      humanChar = CHARACTERS.find(c => c.id === chosenCharId);
+      const rest = chars.filter(c => c.id !== chosenCharId);
+      chars.splice(0, chars.length, humanChar, ...rest);
+    }
+
+    const aiNames = ['Bill', 'Dakota', 'Cheyenne', 'Wyatt', 'Annie', 'Butch'];
+    this.players = [];
+
+    for (let i = 0; i < playerCount; i++) {
+      const roleObj = ROLES.find(r => r.id === roleIds[i]);
+      const charObj = chars[i];
+      const isSheriff = roleObj.id === 'sheriff';
+      const maxHp = charObj.hp + (isSheriff ? 1 : 0);
+
+      this.players.push({
+        id: i,
+        name: i === 0 ? 'Ty' : aiNames[i - 1],
+        isHuman: i === 0,
+        role: roleObj,
+        character: charObj,
+        hp: maxHp,
+        maxHp,
+        hand: [],
+        table: [], // blue cards: weapon, barrel, mustang, scope, jail, dynamite
+        alive: true,
+        revealedRole: isSheriff,
+        hostilityToSheriff: 0 // AI memory heuristic
+      });
+    }
+
+    // Deal initial hands equal to maxHp
+    for (const p of this.players) {
+      for (let c = 0; c < p.maxHp; c++) {
+        const card = this.drawCardRaw();
+        if (card) p.hand.push(card);
+      }
+    }
+
+    // Sheriff starts first
+    this.turnIndex = this.players.findIndex(p => p.role.id === 'sheriff');
+    this.log(`Nová hra pro ${playerCount} hráčů! Šerifem je ${this.players[this.turnIndex].name} (${this.players[this.turnIndex].character.name}).`, 'important');
+    this.ui.renderAll();
+    this.runTurnLoop();
+  }
+
+  livingPlayers() {
+    return this.players.filter(p => p.alive);
+  }
+
+  drawCardRaw() {
+    if (this.deck.length === 0) {
+      if (this.discard.length === 0) return null;
+      const top = this.discard.pop();
+      this.deck = this.shuffle(this.discard);
+      this.discard = top ? [top] : [];
+      this.log('Dobírací balíček byl zamíchán z odhazovacího.', 'system');
+    }
+    return this.deck.pop();
+  }
+
+  giveCardToPlayer(player, card) {
+    if (!card) return;
+    player.hand.push(card);
+  }
+
+  discardCard(card) {
+    if (!card) return;
+    this.discard.push(card);
+  }
+
+  checkSuzyLafayette(player) {
+    if (player.alive && player.character.id === 'suzy_lafayette' && player.hand.length === 0) {
+      const c = this.drawCardRaw();
+      if (c) {
+        player.hand.push(c);
+        this.log(`${player.name} (Suzy Lafayette) má prázdnou ruku a dobírá 1 kartu.`, 'ability');
+      }
+    }
+  }
+
+  // Distance from attacker A to target B
+  getDistance(a, b) {
+    if (a.id === b.id) return 0;
+    const living = this.livingPlayers();
+    const idxA = living.findIndex(p => p.id === a.id);
+    const idxB = living.findIndex(p => p.id === b.id);
+    if (idxA === -1 || idxB === -1) return 99;
+    const n = living.length;
+    let dist = Math.min((idxB - idxA + n) % n, (idxA - idxB + n) % n);
+
+    if (b.table.some(c => c.type === 'mustang')) dist += 1;
+    if (b.character.id === 'paul_regret') dist += 1;
+    if (a.table.some(c => c.type === 'scope')) dist -= 1;
+    if (a.character.id === 'rose_doolan') dist -= 1;
+
+    return Math.max(1, dist);
+  }
+
+  getWeaponRange(player) {
+    const weapon = player.table.find(c => c.category === 'weapon');
+    return weapon ? weapon.range : 1;
+  }
+
+  hasUnlimitedBang(player) {
+    if (player.character.id === 'willy_the_kid') return true;
+    return player.table.some(c => c.type === 'volcanic');
+  }
+
+  hasCardOnTable(player, type) {
+    return player.table.some(c => c.type === type);
+  }
+
+  // "Draw!" (líznout!) check — supports Lucky Duke!
+  async performDrawCheck(player, reason) {
+    if (player.character.id === 'lucky_duke') {
+      const c1 = this.drawCardRaw();
+      const c2 = this.drawCardRaw();
+      if (!c1) return null;
+      if (!c2) {
+        this.discardCard(c1);
+        return c1;
+      }
+      let chosen;
+      if (player.isHuman) {
+        chosen = await this.ui.promptLuckyDuke(c1, c2, reason);
+      } else {
+        // AI picks hearts if barrel/jail, or non-2-9-spades if dynamite
+        if (reason === 'dynamite') {
+          const isBad = c => c.suit === 'S' && ['2','3','4','5','6','7','8','9'].includes(c.rank);
+          chosen = !isBad(c1) ? c1 : c2;
+        } else {
+          chosen = c1.suit === 'H' ? c1 : c2;
+        }
+      }
+      this.discardCard(c1);
+      this.discardCard(c2);
+      this.log(`${player.name} (Lucky Duke) otočil ${c1.rank}${SUITS[c1.suit].symbol} a ${c2.rank}${SUITS[c2.suit].symbol}, vybral ${chosen.rank}${SUITS[chosen.suit].symbol}.`, 'ability');
+      return chosen;
+    } else {
+      const c = this.drawCardRaw();
+      if (!c) return null;
+      this.discardCard(c);
+      this.log(`${player.name} líznul pro ${reason}: ${c.name} (${c.rank}${SUITS[c.suit].symbol}).`, 'system');
+      return c;
+    }
+  }
+
+  async runTurnLoop() {
+    while (!this.gameOver) {
+      const p = this.players[this.turnIndex];
+      if (!p.alive) {
+        this.advanceTurnIndex();
+        continue;
+      }
+
+      this.bangsPlayedThisTurn = 0;
+      this.phase = 'start';
+      this.ui.renderAll();
+
+      // 1. DYNAMITE CHECK
+      const dynIdx = p.table.findIndex(c => c.type === 'dynamite');
+      if (dynIdx !== -1) {
+        await this.sleep(450);
+        const drawn = await this.performDrawCheck(p, 'Dynamit');
+        const exploded = drawn && drawn.suit === 'S' && ['2','3','4','5','6','7','8','9'].includes(drawn.rank);
+        const dynCard = p.table.splice(dynIdx, 1)[0];
+        if (exploded) {
+          this.discardCard(dynCard);
+          this.log(`💥 DYNAMIT VYBUCHL u hráče ${p.name}! (-3 životy)`, 'danger');
+          this.ui.showToast(p.id, '💥 BOOM! -3 ♥');
+          await this.damagePlayer(p, 3, null);
+          if (this.gameOver || !p.alive) {
+            this.advanceTurnIndex();
+            continue;
+          }
+        } else {
+          // Pass to next living player
+          const living = this.livingPlayers();
+          const curIdx = living.findIndex(lp => lp.id === p.id);
+          const nextP = living[(curIdx + 1) % living.length];
+          nextP.table.push(dynCard);
+          this.log(`Dynamit nevybuchl a posouvá se k hráči ${nextP.name}.`, 'system');
+        }
+        this.ui.renderAll();
+      }
+
+      // 2. JAIL CHECK
+      const jailIdx = p.table.findIndex(c => c.type === 'jail');
+      if (jailIdx !== -1) {
+        await this.sleep(450);
+        const drawn = await this.performDrawCheck(p, 'Vězení');
+        const jailCard = p.table.splice(jailIdx, 1)[0];
+        this.discardCard(jailCard);
+        if (drawn && drawn.suit === 'H') {
+          this.log(`🔓 ${p.name} utekl z Vězení! (♥ Srdce)`, 'good');
+          this.ui.showToast(p.id, '🔓 Útěk!');
+        } else {
+          this.log(`⛓️ ${p.name} zůstává ve Vězení a vynechává tah.`, 'danger');
+          this.ui.showToast(p.id, '⛓️ Vynechává tah');
+          this.ui.renderAll();
+          await this.sleep(700);
+          this.advanceTurnIndex();
+          continue;
+        }
+        this.ui.renderAll();
+      }
+
+      // 3. DRAW PHASE (Phase 1)
+      this.phase = 'draw';
+      this.ui.renderAll();
+      await this.executeDrawPhase(p);
+      if (this.gameOver) break;
+
+      // 4. PLAY PHASE (Phase 2)
+      this.phase = 'play';
+      this.ui.renderAll();
+      if (p.isHuman) {
+        await this.ui.waitForHumanEndTurn();
+      } else {
+        await this.runAITurn(p);
+      }
+      if (this.gameOver) break;
+
+      // 5. DISCARD PHASE (Phase 3)
+      if (p.alive && p.hand.length > p.hp) {
+        this.phase = 'discard';
+        this.ui.renderAll();
+        if (p.isHuman) {
+          await this.ui.waitForHumanDiscard(p);
+        } else {
+          while (p.hand.length > p.hp) {
+            const idx = this.pickAICardToDiscard(p);
+            const [rem] = p.hand.splice(idx, 1);
+            this.discardCard(rem);
+            this.log(`${p.name} odhodil ${rem.name}.`, 'system');
+          }
+        }
+      }
+
+      this.checkSuzyLafayette(p);
+      this.advanceTurnIndex();
+    }
+  }
+
+  advanceTurnIndex() {
+    this.turnIndex = (this.turnIndex + 1) % this.players.length;
+  }
+
+  async executeDrawPhase(p) {
+    if (p.character.id === 'kit_carlson') {
+      const c1 = this.drawCardRaw();
+      const c2 = this.drawCardRaw();
+      const c3 = this.drawCardRaw();
+      const pool = [c1, c2, c3].filter(Boolean);
+      if (pool.length <= 2) {
+        pool.forEach(c => p.hand.push(c));
+      } else if (p.isHuman) {
+        const { kept, returned } = await this.ui.promptKitCarlson(pool);
+        kept.forEach(c => p.hand.push(c));
+        this.deck.push(returned);
+      } else {
+        // AI keeps best 2, returns worst
+        const sorted = [...pool].sort((a, b) => this.aiCardValue(b, p) - this.aiCardValue(a, p));
+        p.hand.push(sorted[0], sorted[1]);
+        this.deck.push(sorted[2]);
+      }
+      this.log(`${p.name} (Kit Carlson) si vybral 2 ze 3 vrchních karet.`, 'ability');
+      return;
+    }
+
+    let firstCardDrawn = false;
+    if (p.character.id === 'jesse_jones') {
+      const candidates = this.livingPlayers().filter(o => o.id !== p.id && o.hand.length > 0);
+      if (candidates.length > 0) {
+        let target = null;
+        if (p.isHuman) {
+          target = await this.ui.promptJesseJones(candidates);
+        } else if (Math.random() < 0.75) {
+          target = candidates[Math.floor(Math.random() * candidates.length)];
+        }
+        if (target) {
+          const rIdx = Math.floor(Math.random() * target.hand.length);
+          const [stolen] = target.hand.splice(rIdx, 1);
+          p.hand.push(stolen);
+          this.checkSuzyLafayette(target);
+          this.log(`${p.name} (Jesse Jones) si vzal 1. kartu z ruky hráče ${target.name}.`, 'ability');
+          firstCardDrawn = true;
+        }
+      }
+    } else if (p.character.id === 'pedro_ramirez' && this.discard.length > 0) {
+      const topDiscard = this.discard[this.discard.length - 1];
+      let takeDiscard = false;
+      if (p.isHuman) {
+        takeDiscard = await this.ui.promptPedroRamirez(topDiscard);
+      } else {
+        takeDiscard = this.aiCardValue(topDiscard, p) >= 5;
+      }
+      if (takeDiscard) {
+        p.hand.push(this.discard.pop());
+        this.log(`${p.name} (Pedro Ramirez) si vzal ${topDiscard.name} z odhazovacího balíčku.`, 'ability');
+        firstCardDrawn = true;
+      }
+    }
+
+    if (!firstCardDrawn) {
+      const c1 = this.drawCardRaw();
+      if (c1) p.hand.push(c1);
+    }
+
+    const c2 = this.drawCardRaw();
+    if (c2) {
+      p.hand.push(c2);
+      if (p.character.id === 'black_jack') {
+        this.log(`${p.name} (Black Jack) ukázal 2. kartu: ${c2.name} (${c2.rank}${SUITS[c2.suit].symbol}).`, 'ability');
+        if (c2.suit === 'H' || c2.suit === 'D') {
+          const c3 = this.drawCardRaw();
+          if (c3) p.hand.push(c3);
+          this.log(`♦/♥ Červená karta! ${p.name} dobírá 1 kartu navíc.`, 'good');
+        }
+      }
+    }
+  }
+
+  // Can player play a specific card from hand during their Play phase?
+  canPlayCard(player, card) {
+    if (this.gameOver || !player.alive) return false;
+    if (this.players[this.turnIndex].id !== player.id || this.phase !== 'play') return false;
+
+    const isBang = card.type === 'bang' || (card.type === 'missed' && player.character.id === 'calamity_janet');
+    if (isBang) {
+      if (this.bangsPlayedThisTurn >= 1 && !this.hasUnlimitedBang(player)) return false;
+      return this.getValidBangTargets(player).length > 0;
+    }
+
+    if (card.type === 'missed') return false; // normal Vedle! cannot be played on your turn
+    if (card.type === 'beer') {
+      if (this.livingPlayers().length <= 2) return false;
+      return player.hp < player.maxHp;
+    }
+    if (card.type === 'panic') {
+      return this.getValidPanicTargets(player).length > 0;
+    }
+    if (card.type === 'cat_balou') {
+      return this.getValidCatBalouTargets(player).length > 0;
+    }
+    if (card.type === 'duel') {
+      return this.livingPlayers().some(o => o.id !== player.id);
+    }
+    if (card.type === 'jail') {
+      return this.livingPlayers().some(o => o.id !== player.id && o.role.id !== 'sheriff' && !this.hasCardOnTable(o, 'jail'));
+    }
+    if (card.type === 'dynamite') {
+      return !this.hasCardOnTable(player, 'dynamite');
+    }
+    if (card.category === 'equipment') {
+      return !this.hasCardOnTable(player, card.type);
+    }
+    return true;
+  }
+
+  getValidBangTargets(player) {
+    const range = this.getWeaponRange(player);
+    return this.livingPlayers().filter(o => o.id !== player.id && this.getDistance(player, o) <= range);
+  }
+
+  getValidPanicTargets(player) {
+    return this.livingPlayers().filter(o => o.id !== player.id && this.getDistance(player, o) <= 1 && (o.hand.length > 0 || o.table.length > 0));
+  }
+
+  getValidCatBalouTargets(player) {
+    return this.livingPlayers().filter(o => o.id !== player.id && (o.hand.length > 0 || o.table.length > 0));
+  }
+
+  async playCard(player, cardUid, targetPlayer = null, targetCardInfo = null) {
+    const idx = player.hand.findIndex(c => c.uid === cardUid);
+    if (idx === -1) return false;
+    const card = player.hand[idx];
+
+    const isBang = card.type === 'bang' || (card.type === 'missed' && player.character.id === 'calamity_janet');
+
+    // Remove from hand first
+    player.hand.splice(idx, 1);
+
+    if (card.border === 'blue') {
+      if (card.type === 'jail') {
+        targetPlayer.table.push(card);
+        this.log(`${player.name} zavřel hráče ${targetPlayer.name} do Vězení!`, 'action');
+        this.ui.showToast(targetPlayer.id, '⛓️ Vězení!');
+      } else if (card.category === 'weapon') {
+        const oldWIdx = player.table.findIndex(c => c.category === 'weapon');
+        if (oldWIdx !== -1) {
+          const [oldW] = player.table.splice(oldWIdx, 1);
+          this.discardCard(oldW);
+        }
+        player.table.push(card);
+        this.log(`${player.name} si vyložil zbraň ${card.name} (dostřel ${card.range}).`, 'action');
+      } else {
+        player.table.push(card);
+        this.log(`${player.name} si vyložil kartu ${card.name}.`, 'action');
+      }
+      this.checkSuzyLafayette(player);
+      this.ui.renderAll();
+      return true;
+    }
+
+    // Brown action card -> discard pile
+    this.discardCard(card);
+    this.checkSuzyLafayette(player);
+
+    if (isBang) {
+      this.bangsPlayedThisTurn++;
+      if (player.role.id !== 'sheriff' && targetPlayer.role.id === 'sheriff') {
+        player.hostilityToSheriff += 2;
+      }
+      this.log(`🔫 ${player.name} vystřelil BANG! na ${targetPlayer.name}!`, 'danger');
+      this.ui.showToast(targetPlayer.id, '🎯 BANG!');
+      this.ui.renderAll();
+      await this.resolveBangAttack(player, targetPlayer);
+    } else if (card.type === 'beer') {
+      if (this.livingPlayers().length > 2 && player.hp < player.maxHp) {
+        player.hp++;
+        this.log(`🍺 ${player.name} vypil Pivo (+1 život).`, 'good');
+        this.ui.showToast(player.id, '🍺 +1 ♥');
+      }
+    } else if (card.type === 'saloon') {
+      for (const lp of this.livingPlayers()) {
+        if (lp.hp < lp.maxHp) lp.hp++;
+      }
+      this.log(`🍻 ${player.name} zahrál Saloon! Všichni získali +1 život.`, 'good');
+    } else if (card.type === 'stagecoach') {
+      for (let i = 0; i < 2; i++) this.giveCardToPlayer(player, this.drawCardRaw());
+      this.log(`🐎 ${player.name} zahrál Dostavník (+2 karty).`, 'action');
+    } else if (card.type === 'wells_fargo') {
+      for (let i = 0; i < 3; i++) this.giveCardToPlayer(player, this.drawCardRaw());
+      this.log(`💰 ${player.name} zahrál Wells Fargo (+3 karty).`, 'action');
+    } else if (card.type === 'panic') {
+      await this.resolveStealOrDiscard(player, targetPlayer, true, targetCardInfo);
+    } else if (card.type === 'cat_balou') {
+      await this.resolveStealOrDiscard(player, targetPlayer, false, targetCardInfo);
+    } else if (card.type === 'gatling') {
+      this.log(`🔥 ${player.name} spustil palbu z KULOMETU na všechny!`, 'danger');
+      for (const lp of this.livingPlayers()) {
+        if (lp.id !== player.id) {
+          await this.resolveSingleMissedCheck(player, lp, 'Kulomet');
+          if (this.gameOver) break;
+        }
+      }
+    } else if (card.type === 'indians') {
+      this.log(`🏹 ${player.name} poslal INDIÁNY na všechny ostatní!`, 'danger');
+      for (const lp of this.livingPlayers()) {
+        if (lp.id !== player.id) {
+          await this.resolveIndiansTarget(player, lp);
+          if (this.gameOver) break;
+        }
+      }
+    } else if (card.type === 'duel') {
+      this.log(`⚔️ ${player.name} vyzval ${targetPlayer.name} na DUEL!`, 'danger');
+      await this.resolveDuel(player, targetPlayer);
+    } else if (card.type === 'general_store') {
+      await this.resolveGeneralStore(player);
+    }
+
+    this.ui.renderAll();
+    return true;
+  }
+
+  async resolveBangAttack(attacker, target) {
+    const needed = attacker.character.id === 'slab_the_killer' ? 2 : 1;
+    let dodged = 0;
+
+    // 1. Jourdonnais innate Barrel
+    if (target.character.id === 'jourdonnais' && dodged < needed) {
+      const c = await this.performDrawCheck(target, 'Jourdonnais');
+      if (c && c.suit === 'H') {
+        dodged++;
+        this.log(`🛡️ ${target.name} (Jourdonnais) uhnul díky ♥!`, 'good');
+        this.ui.showToast(target.id, '🛡️ Uhnul!');
+      }
+    }
+
+    // 2. Barrel on table
+    if (this.hasCardOnTable(target, 'barrel') && dodged < needed) {
+      const c = await this.performDrawCheck(target, 'Barel');
+      if (c && c.suit === 'H') {
+        dodged++;
+        this.log(`🛢️ ${target.name} se schoval za Barel (♥)!`, 'good');
+        this.ui.showToast(target.id, '🛢️ Barel!');
+      }
+    }
+
+    // 3. Play Vedle! from hand
+    while (dodged < needed) {
+      const played = await this.askForMissedCard(target, `BANG! od ${attacker.name} (zbývá odvrátit: ${needed - dodged})`);
+      if (played) {
+        dodged++;
+      } else {
+        break;
+      }
+    }
+
+    if (dodged >= needed) {
+      this.ui.showToast(target.id, '🛡️ Vedle!');
+      return;
+    }
+
+    await this.damagePlayer(target, 1, attacker);
+  }
+
+  async resolveSingleMissedCheck(attacker, target, sourceName) {
+    let dodged = false;
+    if (target.character.id === 'jourdonnais') {
+      const c = await this.performDrawCheck(target, 'Jourdonnais');
+      if (c && c.suit === 'H') dodged = true;
+    }
+    if (!dodged && this.hasCardOnTable(target, 'barrel')) {
+      const c = await this.performDrawCheck(target, 'Barel');
+      if (c && c.suit === 'H') dodged = true;
+    }
+    if (!dodged) {
+      dodged = await this.askForMissedCard(target, sourceName);
+    }
+    if (dodged) {
+      this.ui.showToast(target.id, '🛡️ Vedle!');
+    } else {
+      await this.damagePlayer(target, 1, attacker);
+    }
+  }
+
+  isMissedCard(player, card) {
+    return card.type === 'missed' || (card.type === 'bang' && player.character.id === 'calamity_janet');
+  }
+
+  isBangCard(player, card) {
+    return card.type === 'bang' || (card.type === 'missed' && player.character.id === 'calamity_janet');
+  }
+
+  async askForMissedCard(target, reason) {
+    const validCards = target.hand.filter(c => this.isMissedCard(target, c));
+    if (validCards.length === 0) return false;
+
+    let chosenCard = null;
+    if (target.isHuman) {
+      chosenCard = await this.ui.promptDefenseCard(target, validCards, `Obrana proti: ${reason}`, 'missed');
+    } else {
+      chosenCard = validCards[0];
+    }
+
+    if (!chosenCard) return false;
+    const idx = target.hand.findIndex(c => c.uid === chosenCard.uid);
+    target.hand.splice(idx, 1);
+    this.discardCard(chosenCard);
+    this.log(`🛡️ ${target.name} zahrál ${chosenCard.name} jako obranu.`, 'good');
+    this.checkSuzyLafayette(target);
+    this.ui.renderAll();
+    return true;
+  }
+
+  async askForBangCard(target, reason) {
+    const validCards = target.hand.filter(c => this.isBangCard(target, c));
+    if (validCards.length === 0) return false;
+
+    let chosenCard = null;
+    if (target.isHuman) {
+      chosenCard = await this.ui.promptDefenseCard(target, validCards, reason, 'bang');
+    } else {
+      chosenCard = validCards[0];
+    }
+
+    if (!chosenCard) return false;
+    const idx = target.hand.findIndex(c => c.uid === chosenCard.uid);
+    target.hand.splice(idx, 1);
+    this.discardCard(chosenCard);
+    this.log(`💥 ${target.name} odhodil ${chosenCard.name}.`, 'action');
+    this.checkSuzyLafayette(target);
+    this.ui.renderAll();
+    return true;
+  }
+
+  async resolveIndiansTarget(attacker, target) {
+    const ok = await this.askForBangCard(target, `Indiáni! od ${attacker.name} — odhoď BANG!`);
+    if (!ok) {
+      await this.damagePlayer(target, 1, attacker);
+    }
+  }
+
+  async resolveDuel(challenger, target) {
+    let current = target;
+    let other = challenger;
+    while (true) {
+      const ok = await this.askForBangCard(current, `Duel s ${other.name} — odhoď BANG!`);
+      if (!ok) {
+        this.log(`⚔️ ${current.name} prohrál Duel!`, 'danger');
+        await this.damagePlayer(current, 1, other);
+        break;
+      }
+      [current, other] = [other, current];
+    }
+  }
+
+  async resolveStealOrDiscard(actor, target, isSteal, presetInfo) {
+    let choice = presetInfo;
+    if (!choice) {
+      if (actor.isHuman) {
+        choice = await this.ui.promptTargetCard(target, isSteal ? 'Panika! — Vezmi kartu' : 'Cat Balou — Odhoď kartu');
+      } else {
+        if (target.table.length > 0) {
+          choice = { zone: 'table', index: 0 };
+        } else {
+          choice = { zone: 'hand', index: Math.floor(Math.random() * target.hand.length) };
+        }
+      }
+    }
+
+    let takenCard = null;
+    if (choice.zone === 'table' && target.table[choice.index]) {
+      takenCard = target.table.splice(choice.index, 1)[0];
+    } else if (target.hand.length > 0) {
+      const rIdx = choice.index !== undefined && target.hand[choice.index] ? choice.index : Math.floor(Math.random() * target.hand.length);
+      takenCard = target.hand.splice(rIdx, 1)[0];
+      this.checkSuzyLafayette(target);
+    }
+
+    if (!takenCard) return;
+    if (isSteal) {
+      actor.hand.push(takenCard);
+      this.log(`✋ ${actor.name} ukradl kartu hráči ${target.name} (${choice.zone === 'table' ? takenCard.name : 'z ruky'}).`, 'action');
+    } else {
+      this.discardCard(takenCard);
+      this.log(`🗑️ ${actor.name} donutil ${target.name} odhodit ${takenCard.name}.`, 'action');
+    }
+  }
+
+  async resolveGeneralStore(starter) {
+    const living = this.livingPlayers();
+    const startIdx = living.findIndex(p => p.id === starter.id);
+    const pool = [];
+    for (let i = 0; i < living.length; i++) {
+      const c = this.drawCardRaw();
+      if (c) pool.push(c);
+    }
+    this.log(`🏪 Hokynářství! Otočeno ${pool.length} karet.`, 'action');
+
+    for (let i = 0; i < living.length && pool.length > 0; i++) {
+      const p = living[(startIdx + i) % living.length];
+      let chosenIdx = 0;
+      if (p.isHuman) {
+        chosenIdx = await this.ui.promptGeneralStore(pool);
+      } else {
+        let best = 0;
+        for (let j = 1; j < pool.length; j++) {
+          if (this.aiCardValue(pool[j], p) > this.aiCardValue(pool[best], p)) best = j;
+        }
+        chosenIdx = best;
+      }
+      const [picked] = pool.splice(chosenIdx, 1);
+      p.hand.push(picked);
+      this.log(`${p.name} si vybral ${picked.name}.`, 'system');
+      this.ui.renderAll();
+    }
+  }
+
+  async damagePlayer(target, amount, attacker) {
+    for (let i = 0; i < amount; i++) {
+      if (!target.alive) break;
+      target.hp--;
+      this.log(`🩸 ${target.name} ztratil 1 život (zbývá ${Math.max(0, target.hp)}/${target.maxHp}).`, 'danger');
+      this.ui.showToast(target.id, '🩸 -1 ♥');
+
+      // Auto-Beer save if hp <= 0 and > 2 players remain
+      if (target.hp <= 0 && this.livingPlayers().length > 2) {
+        const beerIdx = target.hand.findIndex(c => c.type === 'beer');
+        if (beerIdx !== -1) {
+          const [beer] = target.hand.splice(beerIdx, 1);
+          this.discardCard(beer);
+          target.hp = 1;
+          this.log(`🍺 ${target.name} se zachránil na poslední chvíli kartou Pivo!`, 'good');
+          this.ui.showToast(target.id, '🍺 Záchrana!');
+          this.checkSuzyLafayette(target);
+        }
+      }
+
+      if (target.hp > 0) {
+        if (target.character.id === 'bart_cassidy') {
+          const c = this.drawCardRaw();
+          if (c) target.hand.push(c);
+          this.log(`${target.name} (Bart Cassidy) si lízl 1 kartu za zranění.`, 'ability');
+        }
+        if (target.character.id === 'el_gringo' && attacker && attacker.id !== target.id && attacker.hand.length > 0) {
+          const rIdx = Math.floor(Math.random() * attacker.hand.length);
+          const [stolen] = attacker.hand.splice(rIdx, 1);
+          target.hand.push(stolen);
+          this.checkSuzyLafayette(attacker);
+          this.log(`${target.name} (El Gringo) si vzal 1 kartu od ${attacker.name}.`, 'ability');
+        }
+      } else {
+        await this.eliminatePlayer(target, attacker);
+        break;
+      }
+    }
+    this.ui.renderAll();
+  }
+
+  async eliminatePlayer(victim, attacker) {
+    victim.alive = false;
+    victim.hp = 0;
+    victim.revealedRole = true;
+    this.log(`💀 ${victim.name} byl vyřazen! Jeho role byla: ${victim.role.name}.`, 'important');
+    this.ui.showToast(victim.id, `💀 ${victim.role.name}`);
+
+    // Vulture Sam takes all cards
+    const vulture = this.livingPlayers().find(p => p.character.id === 'vulture_sam' && p.id !== victim.id);
+    if (vulture) {
+      const loot = [...victim.hand, ...victim.table];
+      victim.hand = [];
+      victim.table = [];
+      vulture.hand.push(...loot);
+      if (loot.length > 0) {
+        this.log(`🦅 ${vulture.name} (Vulture Sam) si vzal všech ${loot.length} karet vyřazeného hráče.`, 'ability');
+      }
+    } else {
+      victim.hand.forEach(c => this.discardCard(c));
+      victim.table.forEach(c => this.discardCard(c));
+      victim.hand = [];
+      victim.table = [];
+    }
+
+    // Check win condition BEFORE rewards
+    if (this.checkWinCondition()) return;
+
+    // Rewards / Penalties
+    if (attacker && attacker.alive) {
+      if (victim.role.id === 'outlaw') {
+        for (let i = 0; i < 3; i++) this.giveCardToPlayer(attacker, this.drawCardRaw());
+        this.log(`💰 ${attacker.name} vyřadil Banditu a získává odměnu 3 karty!`, 'good');
+      } else if (victim.role.id === 'deputy' && attacker.role.id === 'sheriff') {
+        attacker.hand.forEach(c => this.discardCard(c));
+        attacker.table.forEach(c => this.discardCard(c));
+        attacker.hand = [];
+        attacker.table = [];
+        this.log(`⚠️ Šerif ${attacker.name} omylem zabil svého Pomocníka a musí odhodit všechny karty!`, 'danger');
+      }
+    }
+  }
+
+  checkWinCondition() {
+    const living = this.livingPlayers();
+    const sheriffAlive = living.some(p => p.role.id === 'sheriff');
+    const outlawsAlive = living.some(p => p.role.id === 'outlaw');
+    const renegadeAlive = living.some(p => p.role.id === 'renegade');
+
+    if (!sheriffAlive) {
+      this.gameOver = true;
+      this.phase = 'gameover';
+      if (living.length === 1 && living[0].role.id === 'renegade') {
+        this.winner = { title: 'Vítězí Odpadlík!', desc: `${living[0].name} zůstal poslední naživu.`, team: 'renegade' };
+      } else {
+        this.winner = { title: 'Vítězí Bandité!', desc: 'Šerif byl eliminován.', team: 'outlaw' };
+      }
+    } else if (!outlawsAlive && !renegadeAlive) {
+      this.gameOver = true;
+      this.phase = 'gameover';
+      this.winner = { title: 'Vítězí Šerif a jeho Pomocníci!', desc: 'Všichni Bandité a Odpadlík byli eliminováni.', team: 'law' };
+    }
+
+    if (this.gameOver) {
+      this.players.forEach(p => { p.revealedRole = true; });
+      this.log(`🏆 KONEC HRY: ${this.winner.title}`, 'important');
+      this.ui.renderAll();
+      this.ui.showGameOver(this.winner);
+      return true;
+    }
+    return false;
+  }
+
+  // Sid Ketchum ability
+  useSidKetchum(player, cardUids) {
+    if (player.character.id !== 'sid_ketchum' || player.hp >= player.maxHp || cardUids.length !== 2) return false;
+    for (const uid of cardUids) {
+      const idx = player.hand.findIndex(c => c.uid === uid);
+      if (idx !== -1) {
+        const [c] = player.hand.splice(idx, 1);
+        this.discardCard(c);
+      }
+    }
+    player.hp++;
+    this.log(`🩺 ${player.name} (Sid Ketchum) odhodil 2 karty a vyléčil si 1 život.`, 'ability');
+    this.checkSuzyLafayette(player);
+    this.ui.renderAll();
+    return true;
+  }
+
+  // --- AI LOGIC ---
+  aiCardValue(card, player) {
+    if (card.type === 'bang') return 7;
+    if (card.type === 'missed') return 7;
+    if (card.type === 'beer') return player.hp < player.maxHp ? 8 : 4;
+    if (card.type === 'barrel') return this.hasCardOnTable(player, 'barrel') ? 1 : 9;
+    if (card.type === 'mustang') return this.hasCardOnTable(player, 'mustang') ? 1 : 8;
+    if (card.type === 'scope') return this.hasCardOnTable(player, 'scope') ? 1 : 7;
+    if (card.category === 'weapon') return 6;
+    if (card.type === 'wells_fargo' || card.type === 'stagecoach') return 9;
+    return 5;
+  }
+
+  pickAICardToDiscard(p) {
+    let worstIdx = 0;
+    let worstVal = 999;
+    p.hand.forEach((c, idx) => {
+      const v = this.aiCardValue(c, p);
+      if (v < worstVal) {
+        worstVal = v;
+        worstIdx = idx;
+      }
+    });
+    return worstIdx;
+  }
+
+  pickAITarget(ai, candidates) {
+    if (candidates.length === 0) return null;
+    const sheriff = this.players.find(p => p.role.id === 'sheriff');
+    if (ai.role.id === 'outlaw') {
+      if (sheriff && candidates.some(c => c.id === sheriff.id)) return sheriff;
+    } else if (ai.role.id === 'deputy' || ai.role.id === 'sheriff') {
+      const nonSheriff = candidates.filter(c => c.role.id !== 'sheriff');
+      if (nonSheriff.length > 0) {
+        nonSheriff.sort((a, b) => b.hostilityToSheriff - a.hostilityToSheriff);
+        return nonSheriff[0];
+      }
+    } else if (ai.role.id === 'renegade') {
+      const nonSheriff = candidates.filter(c => c.role.id !== 'sheriff');
+      if (nonSheriff.length > 0) return nonSheriff[Math.floor(Math.random() * nonSheriff.length)];
+    }
+    return candidates[Math.floor(Math.random() * candidates.length)];
+  }
+
+  async runAITurn(ai) {
+    await this.sleep(500);
+
+    // Sid Ketchum AI heal
+    while (ai.character.id === 'sid_ketchum' && ai.hp < ai.maxHp && ai.hand.length >= 3) {
+      this.useSidKetchum(ai, [ai.hand[0].uid, ai.hand[1].uid]);
+      await this.sleep(350);
+    }
+
+    let madeMove = true;
+    let safety = 0;
+    while (madeMove && !this.gameOver && ai.alive && safety++ < 20) {
+      madeMove = false;
+      for (const card of [...ai.hand]) {
+        if (!this.canPlayCard(ai, card)) continue;
+
+        let target = null;
+        if (card.type === 'bang' || (card.type === 'missed' && ai.character.id === 'calamity_janet')) {
+          target = this.pickAITarget(ai, this.getValidBangTargets(ai));
+        } else if (card.type === 'panic') {
+          target = this.pickAITarget(ai, this.getValidPanicTargets(ai));
+        } else if (card.type === 'cat_balou') {
+          target = this.pickAITarget(ai, this.getValidCatBalouTargets(ai));
+        } else if (card.type === 'duel') {
+          const bangCount = ai.hand.filter(c => this.isBangCard(ai, c)).length;
+          if (bangCount < 1) continue;
+          target = this.pickAITarget(ai, this.livingPlayers().filter(o => o.id !== ai.id));
+        } else if (card.type === 'jail') {
+          const jailTargets = this.livingPlayers().filter(o => o.id !== ai.id && o.role.id !== 'sheriff' && !this.hasCardOnTable(o, 'jail'));
+          target = this.pickAITarget(ai, jailTargets);
+        } else if (card.type === 'indians') {
+          if (ai.role.id === 'deputy' && this.players.find(p => p.role.id === 'sheriff')?.hp <= 1) continue;
+        } else if (card.type === 'gatling') {
+          if (ai.role.id === 'deputy' && this.players.find(p => p.role.id === 'sheriff')?.hp <= 1) continue;
+        } else if (card.category === 'weapon') {
+          const curRange = this.getWeaponRange(ai);
+          if (card.range < curRange && card.type !== 'volcanic') continue;
+        }
+
+        await this.playCard(ai, card.uid, target);
+        madeMove = true;
+        await this.sleep(550);
+        break;
+      }
+    }
+  }
+
+  sleep(ms) {
+    return new Promise(res => setTimeout(res, ms));
+  }
+}
+
+</script>
+  <script>
+// Mobile UI Controller
+class MobileBangUI {
+  constructor() {
+    this.engine = null; this.pendingCardUid = null; this.validTargetIds = [];
+    this.endTurnResolver = null; this.discardResolver = null;
+    this.sidMode = false; this.sidSelected = []; this.toasts = {};
+  }
+  init(engine) {
+    this.engine = engine;
+    const charSelect = document.getElementById('setup-character');
+    charSelect.innerHTML = '<option value="random">Náhodná postava</option>';
+    CHARACTERS.forEach(c => {
+      const opt = document.createElement('option'); opt.value = c.id;
+      opt.textContent = `${c.name} (${c.hp} ♥)`; charSelect.appendChild(opt);
+    });
+    document.getElementById('btn-start-game').onclick = () => {
+      const count = parseInt(document.getElementById('setup-players').value, 10);
+      const charId = document.getElementById('setup-character').value;
+      document.getElementById('setup-modal').classList.add('hidden');
+      this.engine.startNewGame(count, charId);
+    };
+    document.getElementById('btn-new-game').onclick = () => this.openSetupModal();
+    document.getElementById('btn-gallery').onclick = () => this.openGalleryModal();
+    document.getElementById('btn-rules').onclick = () => this.openRulesModal();
+    document.getElementById('btn-log').onclick = () => this.openLogModal();
+    document.getElementById('btn-end-turn').onclick = () => {
+      if (this.endTurnResolver) { const res = this.endTurnResolver; this.endTurnResolver = null; this.cancelTargetMode(); res(); }
+    };
+    document.getElementById('btn-sid-heal').onclick = () => {
+      const human = this.engine.players[0];
+      if (!human || human.character.id !== 'sid_ketchum') return;
+      this.sidMode = !this.sidMode; this.sidSelected = []; this.cancelTargetMode(); this.renderAll();
+    };
+    this.openSetupModal();
+  }
+  openSetupModal() { document.getElementById('setup-modal').classList.remove('hidden'); }
+  renderCardHTML(card, extraClasses = '') {
+    const suit = SUITS[card.suit], borderClass = card.border === 'blue' ? 'border-blue' : 'border-brown';
+    return `<div class="bang-card ${borderClass} ${extraClasses}" data-uid="${card.uid}"><div class="card-title">${card.name}</div><div class="card-art-wrap">${getCardArtSVG(card.type)}</div><div class="card-symbols">${card.symbols.join(' · ')}</div><div class="card-desc">${card.desc}</div><div class="card-suit-badge" style="color:${suit.color}">${card.rank}${suit.symbol}</div></div>`;
+  }
+  renderCharacterCardHTML(char) {
+    return `<div class="bang-card border-gold"><div class="card-title">${char.name}</div><div class="card-art-wrap">${getCharacterPortraitSVG(char.id)}</div><div class="card-symbols">❤️ ${char.hp} životy</div><div class="card-desc" style="-webkit-line-clamp:4">${char.ability}</div></div>`;
+  }
+  renderRoleCardHTML(role) {
+    return `<div class="bang-card border-gold"><div class="card-title">${role.name}</div><div class="card-art-wrap">${getRoleArtSVG(role.id)}</div><div class="card-symbols">${role.count}×</div><div class="card-desc" style="-webkit-line-clamp:4">${role.goal}</div></div>`;
+  }
+  showToast(playerId, text) {
+    this.toasts[playerId] = text; this.renderAll();
+    setTimeout(() => { if (this.toasts[playerId] === text) { delete this.toasts[playerId]; this.renderAll(); } }, 1800);
+  }
+  renderAll() {
+    if (!this.engine || this.engine.players.length === 0) return;
+    this.renderOpponents(); this.renderCenterTable(); this.renderHumanPanel();
+  }
+  renderOpponents() {
+    const grid = document.getElementById('opponents-grid'); grid.innerHTML = '';
+    const human = this.engine.players[0], activePlayer = this.engine.players[this.engine.turnIndex];
+    for (let i = 1; i < this.engine.players.length; i++) {
+      const p = this.engine.players[i];
+      const isTurn = activePlayer && activePlayer.id === p.id && !this.engine.gameOver;
+      const isTargetable = this.validTargetIds.includes(p.id);
+      const dist = p.alive && human.alive ? this.engine.getDistance(human, p) : '-';
+      const seat = document.createElement('div');
+      seat.className = `player-seat ${isTurn ? 'active-turn' : ''} ${!p.alive ? 'dead' : ''} ${isTargetable ? 'targetable' : ''}`;
+      let bulletsHTML = '';
+      for (let b = 0; b < p.maxHp; b++) bulletsHTML += `<div class="bullet ${b >= p.hp ? 'lost' : ''}"></div>`;
+      const tableHTML = p.table.map(c => `<span class="mini-blue-card ${c.type === 'jail' || c.type === 'dynamite' ? 'hazard' : ''}">${c.name}${c.range ? `(${c.range})` : ''}</span>`).join('');
+      seat.innerHTML = `${this.toasts[p.id] ? `<div class="toast-bubble">${this.toasts[p.id]}</div>` : ''}<div class="seat-header"><span class="seat-name">${p.name}</span><span class="role-pill ${p.revealedRole ? p.role.id : ''}">${p.revealedRole ? p.role.name : '?'}</span></div><div class="seat-body"><div class="seat-avatar">${getCharacterPortraitSVG(p.character.id)}</div><div class="seat-stats"><div class="char-label">${p.character.name}</div><div class="hp-bullets">${bulletsHTML}</div><div class="seat-meta"><span>🃏${p.hand.length}</span><span>📏${dist}</span></div></div></div><div class="seat-table-cards">${tableHTML}</div>`;
+      if (isTargetable) seat.onclick = () => this.confirmTarget(p);
+      else seat.onclick = () => this.showInspectorModal(this.renderCharacterCardHTML(p.character), `${p.name} — ${p.character.name}`);
+      grid.appendChild(seat);
+    }
+  }
+  renderCenterTable() {
+    document.getElementById('deck-count').textContent = `${this.engine.deck.length} karet`;
+    const discardEl = document.getElementById('discard-top');
+    discardEl.innerHTML = this.engine.discard.length > 0 ? this.renderCardHTML(this.engine.discard[this.engine.discard.length - 1], 'small') : '<div class="card-back" style="opacity:0.35"><span style="font-size:10px">Prázdný</span></div>';
+    const active = this.engine.players[this.engine.turnIndex];
+    const titleEl = document.getElementById('turn-title'), subEl = document.getElementById('turn-subtitle');
+    if (this.engine.gameOver) { titleEl.textContent = this.engine.winner.title; subEl.textContent = this.engine.winner.desc; }
+    else if (this.pendingCardUid) { titleEl.textContent = 'Vyber cíl!'; subEl.textContent = 'Klepni na červeně označeného hráče nahoře.'; }
+    else if (this.sidMode) { titleEl.textContent = 'Sid Ketchum'; subEl.textContent = `Vyber 2 karty k odhození (${this.sidSelected.length}/2).`; }
+    else if (active.isHuman && this.engine.phase === 'discard') { titleEl.textContent = 'Odhoď přebytečné karty!'; subEl.textContent = `Máš ${active.hand.length} karet, max ${active.hp}.`; }
+    else if (active.isHuman && this.engine.phase === 'play') { titleEl.textContent = 'Tvůj tah!'; subEl.textContent = `Klepni na kartu pro zahrání · Dostřel: ${this.engine.getWeaponRange(active)}`; }
+    else { titleEl.textContent = `Tah: ${active.name}`; subEl.textContent = active.character.name; }
+  }
+  renderHumanPanel() {
+    const human = this.engine.players[0], isMyTurn = this.engine.players[this.engine.turnIndex]?.id === 0;
+    document.getElementById('human-avatar').innerHTML = getCharacterPortraitSVG(human.character.id);
+    document.getElementById('human-avatar').onclick = () => this.showInspectorModal(this.renderCharacterCardHTML(human.character), human.character.name);
+    document.getElementById('human-char-name').textContent = human.character.name;
+    const roleEl = document.getElementById('human-role');
+    roleEl.textContent = human.role.name; roleEl.className = `role-pill ${human.role.id}`;
+    roleEl.onclick = () => this.showInspectorModal(this.renderRoleCardHTML(human.role), `Tvá role: ${human.role.name}`);
+    let bulletsHTML = '';
+    for (let b = 0; b < human.maxHp; b++) bulletsHTML += `<div class="bullet ${b >= human.hp ? 'lost' : ''}"></div>`;
+    document.getElementById('human-bullets').innerHTML = bulletsHTML;
+    document.getElementById('human-table-cards').innerHTML = human.table.map(c => `<span class="mini-blue-card ${c.type === 'jail' || c.type === 'dynamite' ? 'hazard' : ''}">${c.name}${c.range ? `(${c.range})` : ''}</span>`).join('');
+    document.getElementById('btn-end-turn').disabled = !(isMyTurn && this.engine.phase === 'play' && !this.engine.gameOver);
+    const sidBtn = document.getElementById('btn-sid-heal');
+    if (human.character.id === 'sid_ketchum' && isMyTurn && this.engine.phase === 'play' && human.hp < human.maxHp && human.hand.length >= 2) {
+      sidBtn.style.display = 'inline-block'; sidBtn.textContent = this.sidMode ? 'Zrušit' : '🩺 +1♥';
+    } else sidBtn.style.display = 'none';
+    const cancelBtn = document.getElementById('btn-cancel-target');
+    cancelBtn.style.display = this.pendingCardUid ? 'inline-block' : 'none';
+    cancelBtn.onclick = () => { this.cancelTargetMode(); this.renderAll(); };
+    const handEl = document.getElementById('human-hand'); handEl.innerHTML = '';
+    human.hand.forEach(card => {
+      const canPlay = isMyTurn && this.engine.phase === 'play' && this.engine.canPlayCard(human, card);
+      const isDiscard = isMyTurn && this.engine.phase === 'discard';
+      const wrapper = document.createElement('div');
+      wrapper.innerHTML = this.renderCardHTML(card, `${(canPlay || isDiscard || this.sidMode) ? 'playable' : ''} ${this.sidSelected.includes(card.uid) ? 'selected-discard' : ''}`);
+      wrapper.firstElementChild.onclick = () => this.onHumanCardClick(card);
+      handEl.appendChild(wrapper.firstElementChild);
+    });
+  }
+  onHumanCardClick(card) {
+    const human = this.engine.players[0], isMyTurn = this.engine.players[this.engine.turnIndex]?.id === 0;
+    if (!isMyTurn || this.engine.gameOver) return;
+    if (this.sidMode) {
+      this.sidSelected = this.sidSelected.includes(card.uid) ? this.sidSelected.filter(x => x !== card.uid) : [...this.sidSelected, card.uid];
+      if (this.sidSelected.length === 2) { this.engine.useSidKetchum(human, this.sidSelected); this.sidMode = false; this.sidSelected = []; }
+      this.renderAll(); return;
+    }
+    if (this.engine.phase === 'discard') {
+      const idx = human.hand.findIndex(c => c.uid === card.uid);
+      if (idx !== -1) {
+        this.engine.discardCard(human.hand.splice(idx, 1)[0]); this.renderAll();
+        if (human.hand.length <= human.hp && this.discardResolver) { const r = this.discardResolver; this.discardResolver = null; r(); }
+      }
+      return;
+    }
+    if (this.engine.phase !== 'play' || !this.engine.canPlayCard(human, card)) {
+      this.showInspectorModal(this.renderCardHTML(card), card.name);
+      return;
+    }
+    const isBang = card.type === 'bang' || (card.type === 'missed' && human.character.id === 'calamity_janet');
+    if (isBang) this.startTargetMode(card.uid, this.engine.getValidBangTargets(human).map(p => p.id));
+    else if (card.type === 'panic') this.startTargetMode(card.uid, this.engine.getValidPanicTargets(human).map(p => p.id));
+    else if (card.type === 'cat_balou') this.startTargetMode(card.uid, this.engine.getValidCatBalouTargets(human).map(p => p.id));
+    else if (card.type === 'duel') this.startTargetMode(card.uid, this.engine.livingPlayers().filter(p => p.id !== human.id).map(p => p.id));
+    else if (card.type === 'jail') this.startTargetMode(card.uid, this.engine.livingPlayers().filter(p => p.id !== human.id && p.role.id !== 'sheriff' && !this.engine.hasCardOnTable(p, 'jail')).map(p => p.id));
+    else this.engine.playCard(human, card.uid, null);
+  }
+  startTargetMode(cardUid, targetIds) { this.pendingCardUid = cardUid; this.validTargetIds = targetIds; this.renderAll(); }
+  cancelTargetMode() { this.pendingCardUid = null; this.validTargetIds = []; }
+  async confirmTarget(targetPlayer) { const uid = this.pendingCardUid; this.cancelTargetMode(); if (uid) await this.engine.playCard(this.engine.players[0], uid, targetPlayer); }
+  waitForHumanEndTurn() { return new Promise(res => { this.endTurnResolver = res; this.renderAll(); }); }
+  waitForHumanDiscard(human) { return human.hand.length <= human.hp ? Promise.resolve() : new Promise(res => { this.discardResolver = res; this.renderAll(); }); }
+  renderLog() {}
+  showModal(title, bodyHTML) {
+    const m = document.getElementById('prompt-modal'); document.getElementById('prompt-title').textContent = title;
+    const body = document.getElementById('prompt-body'); body.innerHTML = bodyHTML; m.classList.remove('hidden'); return body;
+  }
+  hideModal() { document.getElementById('prompt-modal').classList.add('hidden'); }
+  showInspectorModal(cardHTML, title) {
+    const body = this.showModal(title, `<div class="modal-cards-row">${cardHTML}</div><div style="text-align:center"><button class="btn btn-gold" id="insp-close">Zavřít</button></div>`);
+    body.querySelector('#insp-close').onclick = () => this.hideModal();
+  }
+  openLogModal() {
+    const items = this.engine.logEntries.map(e => `<div class="log-item ${e.tone}"><strong>${e.time}</strong> — ${e.msg}</div>`).join('') || '<p>Zatím žádné akce.</p>';
+    const body = this.showModal('📜 Záznam přestřelky', `<div class="log-list">${items}</div><div style="text-align:center;margin-top:12px"><button class="btn btn-gold" id="log-close">Zavřít</button></div>`);
+    body.querySelector('#log-close').onclick = () => this.hideModal();
+  }
+  promptDefenseCard(player, validCards, reason) {
+    return new Promise(res => {
+      const body = this.showModal('Reakce na útok!', `<p style="text-align:center;margin:0 0 8px 0">${reason}</p><div class="modal-cards-row">${validCards.map(c => this.renderCardHTML(c, 'playable')).join('')}</div><div style="text-align:center;margin-top:8px"><button class="btn btn-primary" id="def-skip">Nepoužít nic</button></div>`);
+      body.querySelectorAll('.bang-card').forEach((el, idx) => { el.onclick = () => { this.hideModal(); res(validCards[idx]); }; });
+      body.querySelector('#def-skip').onclick = () => { this.hideModal(); res(null); };
+    });
+  }
+  promptGeneralStore(pool) {
+    return new Promise(res => {
+      const body = this.showModal('Hokynářství — Vyber kartu', `<div class="modal-cards-row">${pool.map(c => this.renderCardHTML(c, 'playable')).join('')}</div>`);
+      body.querySelectorAll('.bang-card').forEach((el, idx) => { el.onclick = () => { this.hideModal(); res(idx); }; });
+    });
+  }
+  promptKitCarlson(pool) {
+    return new Promise(res => {
+      let chosen = [];
+      const render = () => {
+        const body = this.showModal('Kit Carlson — Vyber 2 karty', `<div class="modal-cards-row">${pool.map((c, i) => this.renderCardHTML(c, `playable ${chosen.includes(i) ? 'selected-discard' : ''}`)).join('')}</div><div style="text-align:center">Vybráno: ${chosen.length}/2</div>`);
+        body.querySelectorAll('.bang-card').forEach((el, idx) => {
+          el.onclick = () => {
+            chosen = chosen.includes(idx) ? chosen.filter(x => x !== idx) : [...chosen, idx];
+            if (chosen.length === 2) { this.hideModal(); res({ kept: chosen.map(i => pool[i]), returned: pool[[0,1,2].find(i => !chosen.includes(i))] }); }
+            else render();
+          };
+        });
+      };
+      render();
+    });
+  }
+  promptLuckyDuke(c1, c2, reason) {
+    return new Promise(res => {
+      const body = this.showModal(`Lucky Duke (${reason})`, `<div class="modal-cards-row">${this.renderCardHTML(c1, 'playable')}${this.renderCardHTML(c2, 'playable')}</div>`);
+      const cards = [c1, c2];
+      body.querySelectorAll('.bang-card').forEach((el, idx) => { el.onclick = () => { this.hideModal(); res(cards[idx]); }; });
+    });
+  }
+  promptJesseJones(candidates) {
+    return new Promise(res => {
+      const body = this.showModal('Jesse Jones — Vzít 1. kartu od hráče?', `<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:10px 0">${candidates.map((p, i) => `<button class="btn" data-i="${i}">${p.name} (${p.hand.length})</button>`).join('')}</div><div style="text-align:center"><button class="btn btn-gold" id="jj-deck">Dobrání z balíčku</button></div>`);
+      body.querySelectorAll('[data-i]').forEach(btn => { btn.onclick = () => { this.hideModal(); res(candidates[parseInt(btn.dataset.i, 10)]); }; });
+      body.querySelector('#jj-deck').onclick = () => { this.hideModal(); res(null); };
+    });
+  }
+  promptPedroRamirez(topDiscard) {
+    return new Promise(res => {
+      const body = this.showModal('Pedro Ramirez — Vzít z odhazovacího?', `<div class="modal-cards-row">${this.renderCardHTML(topDiscard)}</div><div style="display:flex;gap:10px;justify-content:center"><button class="btn btn-gold" id="pr-yes">Ano</button><button class="btn" id="pr-no">Z balíčku</button></div>`);
+      body.querySelector('#pr-yes').onclick = () => { this.hideModal(); res(true); };
+      body.querySelector('#pr-no').onclick = () => { this.hideModal(); res(false); };
+    });
+  }
+  promptTargetCard(target, title) {
+    return new Promise(res => {
+      const body = this.showModal(`${title} (${target.name})`, `<div style="display:flex;flex-direction:column;gap:10px;align-items:center">${target.hand.length > 0 ? `<button class="btn btn-gold" id="pick-hand">Z ruky (${target.hand.length})</button>` : ''}${target.table.length > 0 ? `<div class="modal-cards-row">${target.table.map(c => this.renderCardHTML(c, 'playable')).join('')}</div>` : ''}</div>`);
+      const handBtn = body.querySelector('#pick-hand');
+      if (handBtn) handBtn.onclick = () => { this.hideModal(); res({ zone: 'hand', index: Math.floor(Math.random() * target.hand.length) }); };
+      body.querySelectorAll('.bang-card').forEach((el, idx) => { el.onclick = () => { this.hideModal(); res({ zone: 'table', index: idx }); }; });
+    });
+  }
+  showGameOver(winner) {
+    const rolesSummary = this.engine.players.map(p => `<div style="padding:4px 8px;background:rgba(0,0,0,0.3);border-radius:4px"><strong>${p.name}</strong> (${p.character.name}) — <span style="color:#fde047">${p.role.name}</span> ${p.alive ? '✅' : '💀'}</div>`).join('');
+    const body = this.showModal('🏆 Konec hry', `<h3 style="text-align:center;color:#fde047;margin:6px 0">${winner.title}</h3><p style="text-align:center;margin:0 0 12px 0">${winner.desc}</p><div style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px">${rolesSummary}</div><div style="text-align:center"><button class="btn btn-gold" id="go-new">Hrát znovu</button></div>`);
+    body.querySelector('#go-new').onclick = () => { this.hideModal(); this.openSetupModal(); };
+  }
+  openGalleryModal() {
+    const allCards = buildDeck();
+    const renderTab = (tab) => {
+      let content = '';
+      if (tab === 'roles') ROLES.forEach(r => { for (let i = 0; i < r.count; i++) content += this.renderRoleCardHTML(r); });
+      else if (tab === 'chars') CHARACTERS.forEach(c => { content += this.renderCharacterCardHTML(c); });
+      else if (tab === 'brown') allCards.filter(c => c.border === 'brown').forEach(c => { content += this.renderCardHTML(c); });
+      else if (tab === 'blue') allCards.filter(c => c.border === 'blue').forEach(c => { content += this.renderCardHTML(c); });
+      return content;
+    };
+    const showTab = (tab) => {
+      const body = this.showModal('Katalog 103 karet', `<div class="gallery-tabs"><button class="btn ${tab === 'roles' ? 'btn-gold' : ''}" data-tab="roles">7 Rolí</button><button class="btn ${tab === 'chars' ? 'btn-gold' : ''}" data-tab="chars">16 Postav</button><button class="btn ${tab === 'brown' ? 'btn-gold' : ''}" data-tab="brown">Hnědé (63)</button><button class="btn ${tab === 'blue' ? 'btn-gold' : ''}" data-tab="blue">Modré (17)</button><button class="btn btn-primary" id="gal-close" style="margin-left:auto">✕</button></div><div class="gallery-grid">${renderTab(tab)}</div>`);
+      body.querySelectorAll('[data-tab]').forEach(btn => { btn.onclick = () => showTab(btn.dataset.tab); });
+      body.querySelector('#gal-close').onclick = () => this.hideModal();
+    };
+    showTab('chars');
+  }
+  openRulesModal() {
+    const body = this.showModal('Pravidla BANG!', `<div style="font-family:system-ui,sans-serif;font-size:13px;line-height:1.5"><p><strong>Role (7):</strong> Šerif a Pomocníci eliminují Bandity a Odpadlíka. Bandité chtějí zabít Šerifa. Odpadlík chce zůstat poslední naživu.</p><p><strong>Tah:</strong> 1) Dynamit & Vězení. 2) Dobrat 2 karty. 3) Zahrát karty (max. 1× BANG! za tah bez Volcanic/Willyho). 4) Odhodit karty nad limit životů.</p><div style="text-align:center;margin-top:12px"><button class="btn btn-gold" id="rules-close">Zavřít</button></div></div>`);
+    body.querySelector('#rules-close').onclick = () => this.hideModal();
+  }
+}
+
+const ui = new MobileBangUI();
+const engine = new BangEngine(ui);
+ui.init(engine);
+  </script>
+</body>
+</html>

@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#1d130c" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="BANG!" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" type="image/svg+xml" href="icon.svg" />
+  <link rel="apple-touch-icon" href="icon.svg" />
+  <title>BANG! — Mobilní edice</title>
+  <style>
+:root {
+  --wood-dark: #1d130c;
+  --parchment: #f4e4c1;
+  --ink: #241810;
+  --ink-muted: #5c4433;
+  --brown-card: #8b5a2b;
+  --blue-card: #2b5b84;
+  --gold: #d4a017;
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  font-family: 'Georgia', 'Times New Roman', serif;
+  background: radial-gradient(circle at 50% 30%, #3d2818 0%, #1d130c 75%, #120b07 100%);
+  color: var(--parchment);
+  overscroll-behavior: none;
+  touch-action: manipulation;
+  user-select: none;
+}
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  max-width: 540px;
+  margin: 0 auto;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.mobile-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: rgba(18, 11, 7, 0.94);
+  border-bottom: 2px solid #6b4423;
+  flex-shrink: 0;
+}
+.brand-title {
+  font-size: 20px;
+  font-weight: 900;
+  letter-spacing: 2px;
+  color: var(--gold);
+}
+.top-btns { display: flex; gap: 6px; }
+.btn {
+  background: linear-gradient(180deg, #8b5a2b 0%, #633e1c 100%);
+  color: #fff7e6;
+  border: 1px solid #c28e4e;
+  border-radius: 8px;
+  padding: 7px 11px;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: system-ui, sans-serif;
+  cursor: pointer;
+}
+.btn:active:not(:disabled) { transform: scale(0.96); }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn-primary { background: linear-gradient(180deg, #b91c1c 0%, #7f1d1d 100%); border-color: #ef4444; }
+.btn-gold { background: linear-gradient(180deg, #d4a017 0%, #92670a 100%); border-color: #fde047; color: #1c1208; }
+
+/* Opponents Horizontal Strip */
+.opponents-strip {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 8px 10px;
+  scroll-snap-type: x mandatory;
+  flex-shrink: 0;
+  -webkit-overflow-scrolling: touch;
+}
+.opponents-strip::-webkit-scrollbar { display: none; }
+.player-seat {
+  position: relative;
+  min-width: 152px;
+  max-width: 162px;
+  scroll-snap-align: start;
+  background: linear-gradient(180deg, rgba(58, 37, 22, 0.95) 0%, rgba(34, 21, 13, 0.98) 100%);
+  border: 2px solid #6b4423;
+  border-radius: 10px;
+  padding: 7px 8px;
+  flex-shrink: 0;
+}
+.player-seat.active-turn { border-color: var(--gold); box-shadow: 0 0 12px rgba(212, 160, 23, 0.5); }
+.player-seat.dead { opacity: 0.4; filter: grayscale(0.8); }
+.player-seat.targetable {
+  border-color: #ef4444;
+  box-shadow: 0 0 14px rgba(239, 68, 68, 0.8);
+  animation: pulseTarget 1s infinite;
+}
+@keyframes pulseTarget { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.03); } }
+.seat-header { display: flex; justify-content: space-between; align-items: center; gap: 4px; margin-bottom: 4px; }
+.seat-name { font-weight: 700; font-size: 13px; color: #fef3c7; }
+.role-pill {
+  font-family: system-ui, sans-serif; font-size: 10px; font-weight: 700;
+  padding: 2px 6px; border-radius: 999px; background: #291a10;
+  border: 1px solid #78502b; color: #e5d2b3; white-space: nowrap;
+}
+.role-pill.sheriff { background: #854d0e; border-color: #facc15; color: #fef08a; }
+.role-pill.deputy { background: #1e3a8a; border-color: #60a5fa; color: #dbeafe; }
+.role-pill.outlaw { background: #7f1d1d; border-color: #f87171; color: #fee2e2; }
+.role-pill.renegade { background: #581c87; border-color: #c084fc; color: #f3e8ff; }
+.seat-body { display: flex; gap: 6px; align-items: center; }
+.seat-avatar { width: 42px; height: 36px; border-radius: 5px; overflow: hidden; border: 1px solid #8b5a2b; flex-shrink: 0; }
+.seat-avatar svg { width: 100%; height: 100%; display: block; }
+.seat-stats { flex: 1; min-width: 0; }
+.char-label { font-size: 11px; font-weight: 700; color: #f3d69d; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hp-bullets { display: flex; gap: 2px; margin: 3px 0; flex-wrap: wrap; }
+.bullet {
+  width: 9px; height: 13px; border-radius: 4px 4px 2px 2px;
+  background: linear-gradient(90deg, #b45309 0%, #fbbf24 50%, #92400e 100%);
+  border: 1px solid #451a03;
+}
+.bullet.lost { background: #261910; border-color: #4b3424; opacity: 0.4; }
+.seat-meta { display: flex; gap: 6px; font-size: 10px; font-family: system-ui, sans-serif; color: #d6bfa0; }
+.seat-table-cards { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 4px; }
+.mini-blue-card {
+  font-family: system-ui, sans-serif; font-size: 10px; font-weight: 600;
+  padding: 1px 5px; border-radius: 4px; background: #1e3a5f; border: 1px solid #60a5fa; color: #e0f2fe;
+}
+.mini-blue-card.hazard { background: #5c1919; border-color: #f87171; color: #fee2e2; }
+.toast-bubble {
+  position: absolute; top: -6px; right: 4px; background: #fef3c7; color: #1c1917;
+  font-family: system-ui, sans-serif; font-size: 11px; font-weight: 800;
+  padding: 2px 7px; border-radius: 999px; border: 2px solid #b45309; z-index: 10;
+}
+
+/* Center Compact Table */
+.center-felt {
+  flex: 1;
+  margin: 0 10px;
+  background: radial-gradient(ellipse at center, #2d4c32 0%, #1c3320 100%);
+  border: 3px solid #6b4423;
+  border-radius: 14px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 0;
+  box-shadow: inset 0 0 24px rgba(0,0,0,0.6);
+}
+.piles-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+.pile-box { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.pile-label { font-size: 10px; font-family: system-ui, sans-serif; color: #d1fae5; }
+.card-back {
+  width: 66px; height: 96px; border-radius: 6px;
+  background: linear-gradient(135deg, #7c4d25 0%, #4e2d13 100%);
+  border: 2px solid #d4a017; display: flex; align-items: center; justify-content: center;
+}
+.card-back-logo {
+  font-size: 12px; font-weight: 900; color: #fde68a; transform: rotate(-12deg);
+  border: 1.5px solid #fde68a; padding: 2px 4px; border-radius: 3px;
+}
+.turn-banner {
+  text-align: center;
+  background: rgba(0,0,0,0.35);
+  border-radius: 8px;
+  padding: 6px 10px;
+}
+.turn-banner h3 { margin: 0; font-size: 15px; color: #fef08a; }
+.turn-banner p { margin: 2px 0 0 0; font-size: 12px; font-family: system-ui, sans-serif; color: #e2e8f0; }
+
+/* Bottom Human Dock */
+.human-dock {
+  background: linear-gradient(180deg, rgba(46, 30, 18, 0.98) 0%, rgba(22, 14, 8, 1) 100%);
+  border-top: 2px solid #8b5a2b;
+  padding: 8px 10px 10px 10px;
+  flex-shrink: 0;
+}
+.human-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.human-id { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.human-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.hand-carousel {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 6px 2px 4px 2px;
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+}
+.hand-carousel::-webkit-scrollbar { display: none; }
+
+/* Cards */
+.bang-card {
+  width: 108px; height: 158px; border-radius: 8px; background: var(--parchment);
+  color: var(--ink); display: flex; flex-direction: column; padding: 4px;
+  position: relative; box-shadow: 0 4px 10px rgba(0,0,0,0.55); flex-shrink: 0;
+  scroll-snap-align: start;
+}
+.bang-card.border-brown { border: 3.5px solid var(--brown-card); }
+.bang-card.border-blue { border: 3.5px solid var(--blue-card); }
+.bang-card.border-gold { border: 3.5px solid #b45309; }
+.bang-card.playable { box-shadow: 0 0 0 2px #fde047, 0 4px 12px rgba(250, 204, 21, 0.45); }
+.bang-card.selected-discard { outline: 3px solid #ef4444; transform: translateY(-6px); }
+.bang-card.small { width: 68px; height: 98px; padding: 3px; }
+.bang-card.small .card-title { font-size: 8.5px; }
+.bang-card.small .card-desc { display: none; }
+.bang-card.small .card-symbols { font-size: 7.5px; }
+.card-title {
+  text-align: center; font-size: 10.5px; font-weight: 900; text-transform: uppercase;
+  border-bottom: 1px solid rgba(92, 68, 51, 0.35); padding-bottom: 2px; margin-bottom: 2px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.card-art-wrap { width: 100%; height: 64px; border-radius: 3px; overflow: hidden; border: 1px solid rgba(92, 68, 51, 0.4); }
+.bang-card.small .card-art-wrap { height: 46px; }
+.card-art-svg, .char-art-svg, .role-art-svg { width: 100%; height: 100%; display: block; }
+.card-symbols { font-family: system-ui, sans-serif; font-size: 9px; font-weight: 700; color: #451a03; text-align: center; margin-top: 2px; }
+.card-desc {
+  font-family: system-ui, sans-serif; font-size: 8.2px; line-height: 1.18; color: var(--ink-muted);
+  text-align: center; margin-top: 2px; overflow: hidden; display: -webkit-box;
+  -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+}
+.card-suit-badge {
+  position: absolute; bottom: 2px; left: 4px; font-family: system-ui, sans-serif;
+  font-size: 10px; font-weight: 800; background: rgba(255, 251, 235, 0.9);
+  padding: 0 3px; border-radius: 3px;
+}
+
+/* Modals */
+.modal-backdrop {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.82);
+  display: flex; align-items: center; justify-content: center; z-index: 100; padding: 12px;
+}
+.modal-backdrop.hidden { display: none; }
+.modal-box {
+  background: #2b1d12; border: 2.5px solid var(--gold); border-radius: 14px;
+  width: 100%; max-width: 500px; max-height: 88dvh; overflow-y: auto;
+  padding: 14px; color: var(--parchment);
+}
+.modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid #6b4423; padding-bottom: 6px; }
+.modal-header h2 { margin: 0; font-size: 18px; color: var(--gold); }
+.modal-cards-row, .gallery-grid { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 10px 0; }
+.gallery-tabs { display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; }
+.log-list { display: flex; flex-direction: column; gap: 5px; font-family: system-ui, sans-serif; font-size: 12px; }
+.log-item { padding: 5px 7px; border-radius: 4px; background: rgba(255,255,255,0.04); }
+.log-item.danger { border-left: 3px solid #ef4444; color: #fecaca; }
+.log-item.good { border-left: 3px solid #22c55e; color: #bbf7d0; }
+.log-item.important { border-left: 3px solid #eab308; color: #fef08a; font-weight: 700; }
+.log-item.ability { border-left: 3px solid #38bdf8; color: #bae6fd; }
+.log-item.action { border-left: 3px solid #d97706; color: #fde68a; }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="mobile-topbar">
+      <div class="brand-title">BANG!</div>
+      <div class="top-btns">
+        <button class="btn" id="btn-log">📜</button>
+        <button class="btn" id="btn-gallery">🃏 103</button>
+        <button class="btn" id="btn-rules">❓</button>
+        <button class="btn btn-gold" id="btn-new-game">Nová</button>
+      </div>
+    </header>
+
+    <section class="opponents-strip" id="opponents-grid"></section>
+
+    <section class="center-felt">
+      <div class="piles-row">
+        <div class="pile-box">
+          <div class="card-back"><div class="card-back-logo">BANG!</div></div>
+          <div class="pile-label" id="deck-count">80 karet</div>
+        </div>
+        <div class="pile-box">
+          <div id="discard-top"></div>
+          <div class="pile-label">Odhazovací</div>
+        </div>
+      </div>
+      <div class="turn-banner">
+        <h3 id="turn-title">Vítej v Saloonu!</h3>
+        <p id="turn-subtitle">Nastav hru a začni přestřelku.</p>
+      </div>
+    </section>
+
+    <section class="human-dock">
+      <div class="human-bar">
+        <div class="human-id">
+          <div class="seat-avatar" id="human-avatar"></div>
+          <div style="min-width:0">
+            <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">
+              <strong id="human-char-name" style="color:#fde68a;font-size:13px">—</strong>
+              <span class="role-pill" id="human-role">Role</span>
+            </div>
+            <div class="hp-bullets" id="human-bullets"></div>
+            <div class="seat-table-cards" id="human-table-cards"></div>
+          </div>
+        </div>
+        <div class="human-actions">
+          <button class="btn" id="btn-sid-heal" style="display:none">🩺 +1♥</button>
+          <button class="btn btn-primary" id="btn-cancel-target" style="display:none">Zrušit</button>
+          <button class="btn btn-gold" id="btn-end-turn" disabled>Konec tahu</button>
+        </div>
+      </div>
+      <div class="hand-carousel" id="human-hand"></div>
+    </section>
+  </div>
+
+  <div class="modal-backdrop" id="setup-modal">
+    <div class="modal-box">
+      <div class="modal-header"><h2>🤠 BANG! Mobilní edice</h2></div>
+      <div style="display:flex;flex-direction:column;gap:12px;font-family:system-ui,sans-serif;font-size:14px">
+        <label style="display:flex;flex-direction:column;gap:4px">
+          <strong>Počet hráčů (4–7):</strong>
+          <select id="setup-players" style="padding:10px;border-radius:8px;background:#1d130c;color:#fef3c7;border:1px solid #8b5a2b">
+            <option value="4">4 hráči (Šerif, Odpadlík, 2 Bandité)</option>
+            <option value="5" selected>5 hráčů (Šerif, Odpadlík, 2 Bandité, 1 Pomocník)</option>
+            <option value="6">6 hráčů (Šerif, Odpadlík, 3 Bandité, 1 Pomocník)</option>
+            <option value="7">7 hráčů (Šerif, Odpadlík, 3 Bandité, 2 Pomocníci)</option>
+          </select>
+        </label>
+        <label style="display:flex;flex-direction:column;gap:4px">
+          <strong>Tvá postava:</strong>
+          <select id="setup-character" style="padding:10px;border-radius:8px;background:#1d130c;color:#fef3c7;border:1px solid #8b5a2b"></select>
+        </label>
+        <button class="btn btn-gold" id="btn-start-game" style="padding:12px;font-size:16px">Rozdat karty & Hrát!</button>
+        <div style="font-size:12px;color:#cbb593;text-align:center">
+          Tip: V prohlížeči na mobilu zvol <strong>„Přidat na plochu“</strong> pro instalaci jako nativní aplikaci (funguje i offline).
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop hidden" id="prompt-modal">
+    <div class="modal-box">
+      <div class="modal-header"><h2 id="prompt-title">Výběr</h2></div>
+      <div id="prompt-body"></div>
+    </div>
+  </div>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js').catch(() => {});
+    }
+  </script>
+  <script src="./cards.js"></script>
+  <script src="./svg-art.js"></script>
+  <script src="./engine.js"></script>
+  <script>
+// Mobile UI Controller
+class MobileBangUI {
+  constructor() {
+    this.engine = null; this.pendingCardUid = null; this.validTargetIds = [];
+    this.endTurnResolver = null; this.discardResolver = null;
+    this.sidMode = false; this.sidSelected = []; this.toasts = {};
+  }
+  init(engine) {
+    this.engine = engine;
+    const charSelect = document.getElementById('setup-character');
+    charSelect.innerHTML = '<option value="random">Náhodná postava</option>';
+    CHARACTERS.forEach(c => {
+      const opt = document.createElement('option'); opt.value = c.id;
+      opt.textContent = `${c.name} (${c.hp} ♥)`; charSelect.appendChild(opt);
+    });
+    document.getElementById('btn-start-game').onclick = () => {
+      const count = parseInt(document.getElementById('setup-players').value, 10);
+      const charId = document.getElementById('setup-character').value;
+      document.getElementById('setup-modal').classList.add('hidden');
+      this.engine.startNewGame(count, charId);
+    };
+    document.getElementById('btn-new-game').onclick = () => this.openSetupModal();
+    document.getElementById('btn-gallery').onclick = () => this.openGalleryModal();
+    document.getElementById('btn-rules').onclick = () => this.openRulesModal();
+    document.getElementById('btn-log').onclick = () => this.openLogModal();
+    document.getElementById('btn-end-turn').onclick = () => {
+      if (this.endTurnResolver) { const res = this.endTurnResolver; this.endTurnResolver = null; this.cancelTargetMode(); res(); }
+    };
+    document.getElementById('btn-sid-heal').onclick = () => {
+      const human = this.engine.players[0];
+      if (!human || human.character.id !== 'sid_ketchum') return;
+      this.sidMode = !this.sidMode; this.sidSelected = []; this.cancelTargetMode(); this.renderAll();
+    };
+    this.openSetupModal();
+  }
+  openSetupModal() { document.getElementById('setup-modal').classList.remove('hidden'); }
+  renderCardHTML(card, extraClasses = '') {
+    const suit = SUITS[card.suit], borderClass = card.border === 'blue' ? 'border-blue' : 'border-brown';
+    return `<div class="bang-card ${borderClass} ${extraClasses}" data-uid="${card.uid}"><div class="card-title">${card.name}</div><div class="card-art-wrap">${getCardArtSVG(card.type)}</div><div class="card-symbols">${card.symbols.join(' · ')}</div><div class="card-desc">${card.desc}</div><div class="card-suit-badge" style="color:${suit.color}">${card.rank}${suit.symbol}</div></div>`;
+  }
+  renderCharacterCardHTML(char) {
+    return `<div class="bang-card border-gold"><div class="card-title">${char.name}</div><div class="card-art-wrap">${getCharacterPortraitSVG(char.id)}</div><div class="card-symbols">❤️ ${char.hp} životy</div><div class="card-desc" style="-webkit-line-clamp:4">${char.ability}</div></div>`;
+  }
+  renderRoleCardHTML(role) {
+    return `<div class="bang-card border-gold"><div class="card-title">${role.name}</div><div class="card-art-wrap">${getRoleArtSVG(role.id)}</div><div class="card-symbols">${role.count}×</div><div class="card-desc" style="-webkit-line-clamp:4">${role.goal}</div></div>`;
+  }
+  showToast(playerId, text) {
+    this.toasts[playerId] = text; this.renderAll();
+    setTimeout(() => { if (this.toasts[playerId] === text) { delete this.toasts[playerId]; this.renderAll(); } }, 1800);
+  }
+  renderAll() {
+    if (!this.engine || this.engine.players.length === 0) return;
+    this.renderOpponents(); this.renderCenterTable(); this.renderHumanPanel();
+  }
+  renderOpponents() {
+    const grid = document.getElementById('opponents-grid'); grid.innerHTML = '';
+    const human = this.engine.players[0], activePlayer = this.engine.players[this.engine.turnIndex];
+    for (let i = 1; i < this.engine.players.length; i++) {
+      const p = this.engine.players[i];
+      const isTurn = activePlayer && activePlayer.id === p.id && !this.engine.gameOver;
+      const isTargetable = this.validTargetIds.includes(p.id);
+      const dist = p.alive && human.alive ? this.engine.getDistance(human, p) : '-';
+      const seat = document.createElement('div');
+      seat.className = `player-seat ${isTurn ? 'active-turn' : ''} ${!p.alive ? 'dead' : ''} ${isTargetable ? 'targetable' : ''}`;
+      let bulletsHTML = '';
+      for (let b = 0; b < p.maxHp; b++) bulletsHTML += `<div class="bullet ${b >= p.hp ? 'lost' : ''}"></div>`;
+      const tableHTML = p.table.map(c => `<span class="mini-blue-card ${c.type === 'jail' || c.type === 'dynamite' ? 'hazard' : ''}">${c.name}${c.range ? `(${c.range})` : ''}</span>`).join('');
+      seat.innerHTML = `${this.toasts[p.id] ? `<div class="toast-bubble">${this.toasts[p.id]}</div>` : ''}<div class="seat-header"><span class="seat-name">${p.name}</span><span class="role-pill ${p.revealedRole ? p.role.id : ''}">${p.revealedRole ? p.role.name : '?'}</span></div><div class="seat-body"><div class="seat-avatar">${getCharacterPortraitSVG(p.character.id)}</div><div class="seat-stats"><div class="char-label">${p.character.name}</div><div class="hp-bullets">${bulletsHTML}</div><div class="seat-meta"><span>🃏${p.hand.length}</span><span>📏${dist}</span></div></div></div><div class="seat-table-cards">${tableHTML}</div>`;
+      if (isTargetable) seat.onclick = () => this.confirmTarget(p);
+      else seat.onclick = () => this.showInspectorModal(this.renderCharacterCardHTML(p.character), `${p.name} — ${p.character.name}`);
+      grid.appendChild(seat);
+    }
+  }
+  renderCenterTable() {
+    document.getElementById('deck-count').textContent = `${this.engine.deck.length} karet`;
+    const discardEl = document.getElementById('discard-top');
+    discardEl.innerHTML = this.engine.discard.length > 0 ? this.renderCardHTML(this.engine.discard[this.engine.discard.length - 1], 'small') : '<div class="card-back" style="opacity:0.35"><span style="font-size:10px">Prázdný</span></div>';
+    const active = this.engine.players[this.engine.turnIndex];
+    const titleEl = document.getElementById('turn-title'), subEl = document.getElementById('turn-subtitle');
+    if (this.engine.gameOver) { titleEl.textContent = this.engine.winner.title; subEl.textContent = this.engine.winner.desc; }
+    else if (this.pendingCardUid) { titleEl.textContent = 'Vyber cíl!'; subEl.textContent = 'Klepni na červeně označeného hráče nahoře.'; }
+    else if (this.sidMode) { titleEl.textContent = 'Sid Ketchum'; subEl.textContent = `Vyber 2 karty k odhození (${this.sidSelected.length}/2).`; }
+    else if (active.isHuman && this.engine.phase === 'discard') { titleEl.textContent = 'Odhoď přebytečné karty!'; subEl.textContent = `Máš ${active.hand.length} karet, max ${active.hp}.`; }
+    else if (active.isHuman && this.engine.phase === 'play') { titleEl.textContent = 'Tvůj tah!'; subEl.textContent = `Klepni na kartu pro zahrání · Dostřel: ${this.engine.getWeaponRange(active)}`; }
+    else { titleEl.textContent = `Tah: ${active.name}`; subEl.textContent = active.character.name; }
+  }
+  renderHumanPanel() {
+    const human = this.engine.players[0], isMyTurn = this.engine.players[this.engine.turnIndex]?.id === 0;
+    document.getElementById('human-avatar').innerHTML = getCharacterPortraitSVG(human.character.id);
+    document.getElementById('human-avatar').onclick = () => this.showInspectorModal(this.renderCharacterCardHTML(human.character), human.character.name);
+    document.getElementById('human-char-name').textContent = human.character.name;
+    const roleEl = document.getElementById('human-role');
+    roleEl.textContent = human.role.name; roleEl.className = `role-pill ${human.role.id}`;
+    roleEl.onclick = () => this.showInspectorModal(this.renderRoleCardHTML(human.role), `Tvá role: ${human.role.name}`);
+    let bulletsHTML = '';
+    for (let b = 0; b < human.maxHp; b++) bulletsHTML += `<div class="bullet ${b >= human.hp ? 'lost' : ''}"></div>`;
+    document.getElementById('human-bullets').innerHTML = bulletsHTML;
+    document.getElementById('human-table-cards').innerHTML = human.table.map(c => `<span class="mini-blue-card ${c.type === 'jail' || c.type === 'dynamite' ? 'hazard' : ''}">${c.name}${c.range ? `(${c.range})` : ''}</span>`).join('');
+    document.getElementById('btn-end-turn').disabled = !(isMyTurn && this.engine.phase === 'play' && !this.engine.gameOver);
+    const sidBtn = document.getElementById('btn-sid-heal');
+    if (human.character.id === 'sid_ketchum' && isMyTurn && this.engine.phase === 'play' && human.hp < human.maxHp && human.hand.length >= 2) {
+      sidBtn.style.display = 'inline-block'; sidBtn.textContent = this.sidMode ? 'Zrušit' : '🩺 +1♥';
+    } else sidBtn.style.display = 'none';
+    const cancelBtn = document.getElementById('btn-cancel-target');
+    cancelBtn.style.display = this.pendingCardUid ? 'inline-block' : 'none';
+    cancelBtn.onclick = () => { this.cancelTargetMode(); this.renderAll(); };
+    const handEl = document.getElementById('human-hand'); handEl.innerHTML = '';
+    human.hand.forEach(card => {
+      const canPlay = isMyTurn && this.engine.phase === 'play' && this.engine.canPlayCard(human, card);
+      const isDiscard = isMyTurn && this.engine.phase === 'discard';
+      const wrapper = document.createElement('div');
+      wrapper.innerHTML = this.renderCardHTML(card, `${(canPlay || isDiscard || this.sidMode) ? 'playable' : ''} ${this.sidSelected.includes(card.uid) ? 'selected-discard' : ''}`);
+      wrapper.firstElementChild.onclick = () => this.onHumanCardClick(card);
+      handEl.appendChild(wrapper.firstElementChild);
+    });
+  }
+  onHumanCardClick(card) {
+    const human = this.engine.players[0], isMyTurn = this.engine.players[this.engine.turnIndex]?.id === 0;
+    if (!isMyTurn || this.engine.gameOver) return;
+    if (this.sidMode) {
+      this.sidSelected = this.sidSelected.includes(card.uid) ? this.sidSelected.filter(x => x !== card.uid) : [...this.sidSelected, card.uid];
+      if (this.sidSelected.length === 2) { this.engine.useSidKetchum(human, this.sidSelected); this.sidMode = false; this.sidSelected = []; }
+      this.renderAll(); return;
+    }
+    if (this.engine.phase === 'discard') {
+      const idx = human.hand.findIndex(c => c.uid === card.uid);
+      if (idx !== -1) {
+        this.engine.discardCard(human.hand.splice(idx, 1)[0]); this.renderAll();
+        if (human.hand.length <= human.hp && this.discardResolver) { const r = this.discardResolver; this.discardResolver = null; r(); }
+      }
+      return;
+    }
+    if (this.engine.phase !== 'play' || !this.engine.canPlayCard(human, card)) {
+      this.showInspectorModal(this.renderCardHTML(card), card.name);
+      return;
+    }
+    const isBang = card.type === 'bang' || (card.type === 'missed' && human.character.id === 'calamity_janet');
+    if (isBang) this.startTargetMode(card.uid, this.engine.getValidBangTargets(human).map(p => p.id));
+    else if (card.type === 'panic') this.startTargetMode(card.uid, this.engine.getValidPanicTargets(human).map(p => p.id));
+    else if (card.type === 'cat_balou') this.startTargetMode(card.uid, this.engine.getValidCatBalouTargets(human).map(p => p.id));
+    else if (card.type === 'duel') this.startTargetMode(card.uid, this.engine.livingPlayers().filter(p => p.id !== human.id).map(p => p.id));
+    else if (card.type === 'jail') this.startTargetMode(card.uid, this.engine.livingPlayers().filter(p => p.id !== human.id && p.role.id !== 'sheriff' && !this.engine.hasCardOnTable(p, 'jail')).map(p => p.id));
+    else this.engine.playCard(human, card.uid, null);
+  }
+  startTargetMode(cardUid, targetIds) { this.pendingCardUid = cardUid; this.validTargetIds = targetIds; this.renderAll(); }
+  cancelTargetMode() { this.pendingCardUid = null; this.validTargetIds = []; }
+  async confirmTarget(targetPlayer) { const uid = this.pendingCardUid; this.cancelTargetMode(); if (uid) await this.engine.playCard(this.engine.players[0], uid, targetPlayer); }
+  waitForHumanEndTurn() { return new Promise(res => { this.endTurnResolver = res; this.renderAll(); }); }
+  waitForHumanDiscard(human) { return human.hand.length <= human.hp ? Promise.resolve() : new Promise(res => { this.discardResolver = res; this.renderAll(); }); }
+  renderLog() {}
+  showModal(title, bodyHTML) {
+    const m = document.getElementById('prompt-modal'); document.getElementById('prompt-title').textContent = title;
+    const body = document.getElementById('prompt-body'); body.innerHTML = bodyHTML; m.classList.remove('hidden'); return body;
+  }
+  hideModal() { document.getElementById('prompt-modal').classList.add('hidden'); }
+  showInspectorModal(cardHTML, title) {
+    const body = this.showModal(title, `<div class="modal-cards-row">${cardHTML}</div><div style="text-align:center"><button class="btn btn-gold" id="insp-close">Zavřít</button></div>`);
+    body.querySelector('#insp-close').onclick = () => this.hideModal();
+  }
+  openLogModal() {
+    const items = this.engine.logEntries.map(e => `<div class="log-item ${e.tone}"><strong>${e.time}</strong> — ${e.msg}</div>`).join('') || '<p>Zatím žádné akce.</p>';
+    const body = this.showModal('📜 Záznam přestřelky', `<div class="log-list">${items}</div><div style="text-align:center;margin-top:12px"><button class="btn btn-gold" id="log-close">Zavřít</button></div>`);
+    body.querySelector('#log-close').onclick = () => this.hideModal();
+  }
+  promptDefenseCard(player, validCards, reason) {
+    return new Promise(res => {
+      const body = this.showModal('Reakce na útok!', `<p style="text-align:center;margin:0 0 8px 0">${reason}</p><div class="modal-cards-row">${validCards.map(c => this.renderCardHTML(c, 'playable')).join('')}</div><div style="text-align:center;margin-top:8px"><button class="btn btn-primary" id="def-skip">Nepoužít nic</button></div>`);
+      body.querySelectorAll('.bang-card').forEach((el, idx) => { el.onclick = () => { this.hideModal(); res(validCards[idx]); }; });
+      body.querySelector('#def-skip').onclick = () => { this.hideModal(); res(null); };
+    });
+  }
+  promptGeneralStore(pool) {
+    return new Promise(res => {
+      const body = this.showModal('Hokynářství — Vyber kartu', `<div class="modal-cards-row">${pool.map(c => this.renderCardHTML(c, 'playable')).join('')}</div>`);
+      body.querySelectorAll('.bang-card').forEach((el, idx) => { el.onclick = () => { this.hideModal(); res(idx); }; });
+    });
+  }
+  promptKitCarlson(pool) {
+    return new Promise(res => {
+      let chosen = [];
+      const render = () => {
+        const body = this.showModal('Kit Carlson — Vyber 2 karty', `<div class="modal-cards-row">${pool.map((c, i) => this.renderCardHTML(c, `playable ${chosen.includes(i) ? 'selected-discard' : ''}`)).join('')}</div><div style="text-align:center">Vybráno: ${chosen.length}/2</div>`);
+        body.querySelectorAll('.bang-card').forEach((el, idx) => {
+          el.onclick = () => {
+            chosen = chosen.includes(idx) ? chosen.filter(x => x !== idx) : [...chosen, idx];
+            if (chosen.length === 2) { this.hideModal(); res({ kept: chosen.map(i => pool[i]), returned: pool[[0,1,2].find(i => !chosen.includes(i))] }); }
+            else render();
+          };
+        });
+      };
+      render();
+    });
+  }
+  promptLuckyDuke(c1, c2, reason) {
+    return new Promise(res => {
+      const body = this.showModal(`Lucky Duke (${reason})`, `<div class="modal-cards-row">${this.renderCardHTML(c1, 'playable')}${this.renderCardHTML(c2, 'playable')}</div>`);
+      const cards = [c1, c2];
+      body.querySelectorAll('.bang-card').forEach((el, idx) => { el.onclick = () => { this.hideModal(); res(cards[idx]); }; });
+    });
+  }
+  promptJesseJones(candidates) {
+    return new Promise(res => {
+      const body = this.showModal('Jesse Jones — Vzít 1. kartu od hráče?', `<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:10px 0">${candidates.map((p, i) => `<button class="btn" data-i="${i}">${p.name} (${p.hand.length})</button>`).join('')}</div><div style="text-align:center"><button class="btn btn-gold" id="jj-deck">Dobrání z balíčku</button></div>`);
+      body.querySelectorAll('[data-i]').forEach(btn => { btn.onclick = () => { this.hideModal(); res(candidates[parseInt(btn.dataset.i, 10)]); }; });
+      body.querySelector('#jj-deck').onclick = () => { this.hideModal(); res(null); };
+    });
+  }
+  promptPedroRamirez(topDiscard) {
+    return new Promise(res => {
+      const body = this.showModal('Pedro Ramirez — Vzít z odhazovacího?', `<div class="modal-cards-row">${this.renderCardHTML(topDiscard)}</div><div style="display:flex;gap:10px;justify-content:center"><button class="btn btn-gold" id="pr-yes">Ano</button><button class="btn" id="pr-no">Z balíčku</button></div>`);
+      body.querySelector('#pr-yes').onclick = () => { this.hideModal(); res(true); };
+      body.querySelector('#pr-no').onclick = () => { this.hideModal(); res(false); };
+    });
+  }
+  promptTargetCard(target, title) {
+    return new Promise(res => {
+      const body = this.showModal(`${title} (${target.name})`, `<div style="display:flex;flex-direction:column;gap:10px;align-items:center">${target.hand.length > 0 ? `<button class="btn btn-gold" id="pick-hand">Z ruky (${target.hand.length})</button>` : ''}${target.table.length > 0 ? `<div class="modal-cards-row">${target.table.map(c => this.renderCardHTML(c, 'playable')).join('')}</div>` : ''}</div>`);
+      const handBtn = body.querySelector('#pick-hand');
+      if (handBtn) handBtn.onclick = () => { this.hideModal(); res({ zone: 'hand', index: Math.floor(Math.random() * target.hand.length) }); };
+      body.querySelectorAll('.bang-card').forEach((el, idx) => { el.onclick = () => { this.hideModal(); res({ zone: 'table', index: idx }); }; });
+    });
+  }
+  showGameOver(winner) {
+    const rolesSummary = this.engine.players.map(p => `<div style="padding:4px 8px;background:rgba(0,0,0,0.3);border-radius:4px"><strong>${p.name}</strong> (${p.character.name}) — <span style="color:#fde047">${p.role.name}</span> ${p.alive ? '✅' : '💀'}</div>`).join('');
+    const body = this.showModal('🏆 Konec hry', `<h3 style="text-align:center;color:#fde047;margin:6px 0">${winner.title}</h3><p style="text-align:center;margin:0 0 12px 0">${winner.desc}</p><div style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px">${rolesSummary}</div><div style="text-align:center"><button class="btn btn-gold" id="go-new">Hrát znovu</button></div>`);
+    body.querySelector('#go-new').onclick = () => { this.hideModal(); this.openSetupModal(); };
+  }
+  openGalleryModal() {
+    const allCards = buildDeck();
+    const renderTab = (tab) => {
+      let content = '';
+      if (tab === 'roles') ROLES.forEach(r => { for (let i = 0; i < r.count; i++) content += this.renderRoleCardHTML(r); });
+      else if (tab === 'chars') CHARACTERS.forEach(c => { content += this.renderCharacterCardHTML(c); });
+      else if (tab === 'brown') allCards.filter(c => c.border === 'brown').forEach(c => { content += this.renderCardHTML(c); });
+      else if (tab === 'blue') allCards.filter(c => c.border === 'blue').forEach(c => { content += this.renderCardHTML(c); });
+      return content;
+    };
+    const showTab = (tab) => {
+      const body = this.showModal('Katalog 103 karet', `<div class="gallery-tabs"><button class="btn ${tab === 'roles' ? 'btn-gold' : ''}" data-tab="roles">7 Rolí</button><button class="btn ${tab === 'chars' ? 'btn-gold' : ''}" data-tab="chars">16 Postav</button><button class="btn ${tab === 'brown' ? 'btn-gold' : ''}" data-tab="brown">Hnědé (63)</button><button class="btn ${tab === 'blue' ? 'btn-gold' : ''}" data-tab="blue">Modré (17)</button><button class="btn btn-primary" id="gal-close" style="margin-left:auto">✕</button></div><div class="gallery-grid">${renderTab(tab)}</div>`);
+      body.querySelectorAll('[data-tab]').forEach(btn => { btn.onclick = () => showTab(btn.dataset.tab); });
+      body.querySelector('#gal-close').onclick = () => this.hideModal();
+    };
+    showTab('chars');
+  }
+  openRulesModal() {
+    const body = this.showModal('Pravidla BANG!', `<div style="font-family:system-ui,sans-serif;font-size:13px;line-height:1.5"><p><strong>Role (7):</strong> Šerif a Pomocníci eliminují Bandity a Odpadlíka. Bandité chtějí zabít Šerifa. Odpadlík chce zůstat poslední naživu.</p><p><strong>Tah:</strong> 1) Dynamit & Vězení. 2) Dobrat 2 karty. 3) Zahrát karty (max. 1× BANG! za tah bez Volcanic/Willyho). 4) Odhodit karty nad limit životů.</p><div style="text-align:center;margin-top:12px"><button class="btn btn-gold" id="rules-close">Zavřít</button></div></div>`);
+    body.querySelector('#rules-close').onclick = () => this.hideModal();
+  }
+}
+
+const ui = new MobileBangUI();
+const engine = new BangEngine(ui);
+ui.init(engine);
+  </script>
+</body>
+</html>

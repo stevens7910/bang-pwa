@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="96" fill="#1d130c"/>
+  <rect x="28" y="28" width="456" height="456" rx="76" fill="#2f1f14" stroke="#d4a017" stroke-width="14"/>
+  <polygon points="256,88 292,188 398,188 314,250 346,352 256,290 166,352 198,250 114,188 220,188" fill="#d4a017" stroke="#78350f" stroke-width="10"/>
+  <rect x="86" y="340" width="340" height="84" rx="16" fill="#8b5a2b" stroke="#fde68a" stroke-width="6"/>
+  <text x="256" y="398" text-anchor="middle" font-family="Georgia, serif" font-size="60" font-weight="900" fill="#fde68a" letter-spacing="4">BANG!</text>
+</svg>
