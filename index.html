@@ -409,7 +409,7 @@ class MobileBangUI {
   }
   showToast(playerId, text) {
     this.toasts[playerId] = text; this.renderAll();
-    setTimeout(() => { if (this.toasts[playerId] === text) { delete this.toasts[playerId]; this.renderAll(); } }, 1800);
+    setTimeout(() => { if (this.toasts[playerId] === text) { delete this.toasts[playerId]; this.renderAll(); } }, 3200);
   }
   renderAll() {
     if (!this.engine || this.engine.players.length === 0) return;

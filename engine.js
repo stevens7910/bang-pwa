@@ -878,12 +878,12 @@ class BangEngine {
   }
 
   async runAITurn(ai) {
-    await this.sleep(500);
+    await this.sleep(1000);
 
     // Sid Ketchum AI heal
     while (ai.character.id === 'sid_ketchum' && ai.hp < ai.maxHp && ai.hand.length >= 3) {
       this.useSidKetchum(ai, [ai.hand[0].uid, ai.hand[1].uid]);
-      await this.sleep(350);
+      await this.sleep(700);
     }
 
     let madeMove = true;
@@ -918,7 +918,7 @@ class BangEngine {
 
         await this.playCard(ai, card.uid, target);
         madeMove = true;
-        await this.sleep(550);
+        await this.sleep(1100);
         break;
       }
     }

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bang-mobile-v1';
+const CACHE_NAME = 'bang-mobile-v2';
 const ASSETS = ['./', './index.html', './manifest.json', './icon.svg', './cards.js', './svg-art.js', './engine.js'];
 
 self.addEventListener('install', (e) => {
