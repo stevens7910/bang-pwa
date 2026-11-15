@@ -4,7 +4,7 @@
   "description": "Základní verze karetní hry BANG! pro mobil (7 rolí, 16 postav, 80 hracích karet).",
   "start_url": "./index.html",
   "display": "standalone",
-  "orientation": "portrait",
+  "orientation": "any",
   "background_color": "#1d130c",
   "theme_color": "#1d130c",
   "icons": [

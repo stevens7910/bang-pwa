@@ -37,10 +37,12 @@ html, body {
   display: flex;
   flex-direction: column;
   height: 100dvh;
-  max-width: 540px;
+  max-width: 1180px;
   margin: 0 auto;
   padding-top: env(safe-area-inset-top);
   padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
 }
 .mobile-topbar {
   display: flex;
@@ -74,7 +76,7 @@ html, body {
 .btn-primary { background: linear-gradient(180deg, #b91c1c 0%, #7f1d1d 100%); border-color: #ef4444; }
 .btn-gold { background: linear-gradient(180deg, #d4a017 0%, #92670a 100%); border-color: #fde047; color: #1c1208; }
 
-/* Opponents Horizontal Strip */
+/* Opponents Strip (Phone) -> Grid (iPad) */
 .opponents-strip {
   display: flex;
   gap: 8px;
@@ -88,7 +90,7 @@ html, body {
 .player-seat {
   position: relative;
   min-width: 152px;
-  max-width: 162px;
+  max-width: 170px;
   scroll-snap-align: start;
   background: linear-gradient(180deg, rgba(58, 37, 22, 0.95) 0%, rgba(34, 21, 13, 0.98) 100%);
   border: 2px solid #6b4423;
@@ -163,9 +165,10 @@ html, body {
 .pile-box { display: flex; flex-direction: column; align-items: center; gap: 3px; }
 .pile-label { font-size: 10px; font-family: system-ui, sans-serif; color: #d1fae5; }
 .card-back {
-  width: 66px; height: 96px; border-radius: 6px;
+  width: 66px; height: 96px; border-radius: 7px;
   background: linear-gradient(135deg, #7c4d25 0%, #4e2d13 100%);
-  border: 2px solid #d4a017; display: flex; align-items: center; justify-content: center;
+  border: 3px solid #f8f1e0; outline: 1px solid #451a03;
+  display: flex; align-items: center; justify-content: center;
 }
 .card-back-logo {
   font-size: 12px; font-weight: 900; color: #fde68a; transform: rotate(-12deg);
@@ -206,40 +209,74 @@ html, body {
 }
 .hand-carousel::-webkit-scrollbar { display: none; }
 
-/* Cards */
+/* Authentic Physical BANG! Card Frame (Outer ivory rim + inner colored border + aged parchment) */
 .bang-card {
-  width: 108px; height: 158px; border-radius: 8px; background: var(--parchment);
-  color: var(--ink); display: flex; flex-direction: column; padding: 4px;
+  width: 112px; height: 164px; border-radius: 9px;
+  background: #f8f1e0; padding: 3px;
+  color: var(--ink); display: flex; flex-direction: column;
   position: relative; box-shadow: 0 4px 10px rgba(0,0,0,0.55); flex-shrink: 0;
   scroll-snap-align: start;
 }
-.bang-card.border-brown { border: 3.5px solid var(--brown-card); }
-.bang-card.border-blue { border: 3.5px solid var(--blue-card); }
-.bang-card.border-gold { border: 3.5px solid #b45309; }
-.bang-card.playable { box-shadow: 0 0 0 2px #fde047, 0 4px 12px rgba(250, 204, 21, 0.45); }
+.bang-card-inner {
+  flex: 1; border-radius: 6px; background: #f3e5c8;
+  display: flex; flex-direction: column; padding: 4px;
+  position: relative; overflow: hidden;
+}
+.bang-card.border-brown .bang-card-inner { border: 3.5px solid #8b5a2b; }
+.bang-card.border-blue .bang-card-inner { border: 3.5px solid #3b6998; }
+.bang-card.border-gold .bang-card-inner { border: 3.5px solid #6b4423; }
+.bang-card.playable { box-shadow: 0 0 0 2.5px #fde047, 0 4px 14px rgba(250, 204, 21, 0.5); }
 .bang-card.selected-discard { outline: 3px solid #ef4444; transform: translateY(-6px); }
-.bang-card.small { width: 68px; height: 98px; padding: 3px; }
-.bang-card.small .card-title { font-size: 8.5px; }
+.bang-card.small { width: 72px; height: 104px; padding: 2px; }
+.bang-card.small .bang-card-inner { padding: 2px; border-width: 2.5px; }
+.bang-card.small .card-title { font-size: 8px; }
 .bang-card.small .card-desc { display: none; }
 .bang-card.small .card-symbols { font-size: 7.5px; }
 .card-title {
   text-align: center; font-size: 10.5px; font-weight: 900; text-transform: uppercase;
-  border-bottom: 1px solid rgba(92, 68, 51, 0.35); padding-bottom: 2px; margin-bottom: 2px;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  letter-spacing: 0.4px; border-bottom: 1px solid rgba(69, 26, 3, 0.35);
+  padding-bottom: 2px; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.card-art-wrap { width: 100%; height: 64px; border-radius: 3px; overflow: hidden; border: 1px solid rgba(92, 68, 51, 0.4); }
-.bang-card.small .card-art-wrap { height: 46px; }
+.card-art-wrap { width: 100%; height: 66px; border-radius: 2px; overflow: hidden; border: 1px solid rgba(92, 68, 51, 0.45); }
+.bang-card.small .card-art-wrap { height: 48px; }
 .card-art-svg, .char-art-svg, .role-art-svg { width: 100%; height: 100%; display: block; }
-.card-symbols { font-family: system-ui, sans-serif; font-size: 9px; font-weight: 700; color: #451a03; text-align: center; margin-top: 2px; }
+.card-symbols { font-family: system-ui, sans-serif; font-size: 8.8px; font-weight: 800; color: #3b2618; text-align: center; margin-top: 3px; }
 .card-desc {
-  font-family: system-ui, sans-serif; font-size: 8.2px; line-height: 1.18; color: var(--ink-muted);
+  font-family: system-ui, sans-serif; font-size: 8px; line-height: 1.18; color: var(--ink-muted);
   text-align: center; margin-top: 2px; overflow: hidden; display: -webkit-box;
   -webkit-line-clamp: 3; -webkit-box-orient: vertical;
 }
 .card-suit-badge {
-  position: absolute; bottom: 2px; left: 4px; font-family: system-ui, sans-serif;
-  font-size: 10px; font-weight: 800; background: rgba(255, 251, 235, 0.9);
-  padding: 0 3px; border-radius: 3px;
+  position: absolute; bottom: 2px; left: 4px; font-family: Georgia, serif;
+  font-size: 11px; font-weight: 900; background: rgba(248, 241, 224, 0.92);
+  padding: 0 3px; border-radius: 2px;
+}
+.char-bullets-side {
+  position: absolute; right: 3px; top: 22px; display: flex; flex-direction: column; gap: 2px;
+  background: rgba(248, 241, 224, 0.85); padding: 2px; border-radius: 3px; border: 1px solid #8b5a2b;
+}
+.char-bullet-icon {
+  width: 6px; height: 11px; border-radius: 3px 3px 1px 1px;
+  background: linear-gradient(90deg, #92400e, #fbbf24, #78350f);
+  border: 0.5px solid #451a03;
+}
+
+/* iPad & Tablet Responsive Layout */
+@media (min-width: 768px) {
+  .opponents-strip {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
+    overflow-x: visible;
+    padding: 10px 14px;
+  }
+  .player-seat { max-width: none; min-width: 0; }
+  .center-felt { margin: 0 14px; padding: 14px 20px; flex-direction: row; align-items: center; }
+  .turn-banner { flex: 1; margin-left: 20px; padding: 12px 16px; }
+  .human-dock { padding: 10px 16px 14px 16px; }
+  .bang-card { width: 126px; height: 184px; }
+  .card-art-wrap { height: 76px; }
+  .card-title { font-size: 11.5px; }
+  .card-desc { font-size: 8.8px; }
 }
 
 /* Modals */
@@ -399,13 +436,14 @@ class MobileBangUI {
   openSetupModal() { document.getElementById('setup-modal').classList.remove('hidden'); }
   renderCardHTML(card, extraClasses = '') {
     const suit = SUITS[card.suit], borderClass = card.border === 'blue' ? 'border-blue' : 'border-brown';
-    return `<div class="bang-card ${borderClass} ${extraClasses}" data-uid="${card.uid}"><div class="card-title">${card.name}</div><div class="card-art-wrap">${getCardArtSVG(card.type)}</div><div class="card-symbols">${card.symbols.join(' · ')}</div><div class="card-desc">${card.desc}</div><div class="card-suit-badge" style="color:${suit.color}">${card.rank}${suit.symbol}</div></div>`;
+    return `<div class="bang-card ${borderClass} ${extraClasses}" data-uid="${card.uid}"><div class="bang-card-inner"><div class="card-title">${card.name}</div><div class="card-art-wrap">${getCardArtSVG(card.type, card.range || null)}</div><div class="card-symbols">${card.symbols.join(' · ')}</div><div class="card-desc">${card.desc}</div><div class="card-suit-badge" style="color:${suit.color}">${card.rank}${suit.symbol}</div></div></div>`;
   }
   renderCharacterCardHTML(char) {
-    return `<div class="bang-card border-gold"><div class="card-title">${char.name}</div><div class="card-art-wrap">${getCharacterPortraitSVG(char.id)}</div><div class="card-symbols">❤️ ${char.hp} životy</div><div class="card-desc" style="-webkit-line-clamp:4">${char.ability}</div></div>`;
+    const bullets = Array.from({ length: char.hp }, () => '<div class="char-bullet-icon"></div>').join('');
+    return `<div class="bang-card border-gold"><div class="bang-card-inner"><div class="card-title">${char.name}</div><div class="card-art-wrap">${getCharacterPortraitSVG(char.id)}</div><div class="char-bullets-side">${bullets}</div><div class="card-symbols">${char.epithet}</div><div class="card-desc" style="-webkit-line-clamp:4">${char.ability}</div></div></div>`;
   }
   renderRoleCardHTML(role) {
-    return `<div class="bang-card border-gold"><div class="card-title">${role.name}</div><div class="card-art-wrap">${getRoleArtSVG(role.id)}</div><div class="card-symbols">${role.count}×</div><div class="card-desc" style="-webkit-line-clamp:4">${role.goal}</div></div>`;
+    return `<div class="bang-card border-gold"><div class="bang-card-inner"><div class="card-title">${role.name}</div><div class="card-art-wrap">${getRoleArtSVG(role.id)}</div><div class="card-symbols">${role.count}× v balíčku</div><div class="card-desc" style="-webkit-line-clamp:4">${role.goal}</div></div></div>`;
   }
   showToast(playerId, text) {
     this.toasts[playerId] = text; this.renderAll();
