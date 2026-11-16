@@ -282,6 +282,7 @@ class BangEngine {
       }
 
       this.checkSuzyLafayette(p);
+      await this.sleep(600);
       this.advanceTurnIndex();
     }
   }
@@ -925,6 +926,6 @@ class BangEngine {
   }
 
   sleep(ms) {
-    return new Promise(res => setTimeout(res, ms));
+    return new Promise(res => setTimeout(res, Math.round(ms * (this.speedMultiplier || 1))));
   }
 }

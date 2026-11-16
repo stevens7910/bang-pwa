@@ -308,6 +308,7 @@ html, body {
     <header class="mobile-topbar">
       <div class="brand-title">BANG!</div>
       <div class="top-btns">
+        <button class="btn" id="btn-speed" title="Rychlost hry">🐢 1×</button>
         <button class="btn" id="btn-log">📜</button>
         <button class="btn" id="btn-gallery">🃏 103</button>
         <button class="btn" id="btn-rules">❓</button>
@@ -423,6 +424,25 @@ class MobileBangUI {
     document.getElementById('btn-gallery').onclick = () => this.openGalleryModal();
     document.getElementById('btn-rules').onclick = () => this.openRulesModal();
     document.getElementById('btn-log').onclick = () => this.openLogModal();
+
+    const speeds = [
+      { mult: 1, label: '🐢 1×' },
+      { mult: 2, label: '🐢 0.5×' },
+      { mult: 4, label: '🐢 0.25×' },
+      { mult: 0.5, label: '🐇 2×' }
+    ];
+    let speedIdx = parseInt(localStorage.getItem('bang_speed_idx') || '0', 10);
+    if (isNaN(speedIdx) || speedIdx < 0 || speedIdx >= speeds.length) speedIdx = 0;
+    const applySpeed = () => {
+      this.engine.speedMultiplier = speeds[speedIdx].mult;
+      document.getElementById('btn-speed').textContent = speeds[speedIdx].label;
+      localStorage.setItem('bang_speed_idx', String(speedIdx));
+    };
+    applySpeed();
+    document.getElementById('btn-speed').onclick = () => {
+      speedIdx = (speedIdx + 1) % speeds.length;
+      applySpeed();
+    };
     document.getElementById('btn-end-turn').onclick = () => {
       if (this.endTurnResolver) { const res = this.endTurnResolver; this.endTurnResolver = null; this.cancelTargetMode(); res(); }
     };
